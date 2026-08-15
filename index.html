@@ -150,7 +150,7 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Campo para Colar a Imagem (Suporta Link ou Copiar Imagem) -->
+          <!-- Campo para Imagem (Aceita URL ou Imagem Colada Direto) -->
           <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
             <label class="block text-xs font-bold text-slate-700">
               <i class="fa-solid fa-image text-brand-600 mr-1"></i> Cole o Link OU a Própria Imagem:
@@ -354,12 +354,18 @@
       window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(local)}`, '_blank');
     }
 
-    // Captura quando o usuário cola uma imagem diretamente da área de transferência
+    // Trata a colagem: aceita colar TEXTO (URL) ou IMAGEM DIRETA
     function handleImagePaste(event) {
-      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      const clipboardData = event.clipboardData || window.clipboardData;
+      if (!clipboardData) return;
+
+      const items = clipboardData.items;
+      let imageFound = false;
+
       for (let item of items) {
         if (item.type.indexOf("image") !== -1) {
-          event.preventDefault();
+          event.preventDefault(); // Impede colagem padrão apenas se for arquivo de imagem
+          imageFound = true;
           const blob = item.getAsFile();
           const reader = new FileReader();
           reader.onload = function(e) {
@@ -367,8 +373,13 @@
             previewImageURL();
           };
           reader.readAsDataURL(blob);
-          return;
+          break;
         }
+      }
+
+      // Se for apenas texto/link, aguarda a entrada do texto e gera a prévia
+      if (!imageFound) {
+        setTimeout(previewImageURL, 50);
       }
     }
 
