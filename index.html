@@ -9,14 +9,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Flatpickr (Calendário e Relógio) -->
+  <!-- Flatpickr (Calendário e Relógio Customizados) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_purple.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
 
   <style>
-    .flatpickr-calendar { z-index: 99999 !important; }
+    .flatpickr-calendar { 
+      z-index: 999999 !important; 
+    }
   </style>
 
   <script>
@@ -131,9 +133,9 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora (Clique para escolher)</label>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora</label>
               <div class="relative">
-                <input type="text" id="wpDataHora" required placeholder="Selecione data e hora" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white cursor-pointer">
+                <input type="text" id="wpDataHora" required readonly placeholder="Toque para escolher" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white cursor-pointer">
                 <i class="fa-regular fa-calendar-check absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
               </div>
             </div>
@@ -148,22 +150,22 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Buscar Fotos Reais -->
+          <!-- Fotos do Local -->
           <div id="imageSearchHelper" class="hidden bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
             <div class="flex justify-between items-center">
-              <label class="block text-xs font-bold text-slate-700">Fotos do Local:</label>
+              <label class="block text-xs font-bold text-slate-700">Fotos Sugeridas:</label>
               <button type="button" onclick="searchGoogleImages()" class="text-xs bg-amber-400 hover:bg-amber-500 text-slate-900 font-extrabold px-3 py-1 rounded-lg transition shadow-sm flex items-center gap-1">
                 <i class="fa-brands fa-google"></i> Abrir Fotos no Google
               </button>
             </div>
-            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto"></div>
+            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto pt-1"></div>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">URL da Imagem Selecionada</label>
             <input type="url" id="wpImagemUrl" oninput="previewImageURL()" placeholder="Cole o link da imagem aqui (https://...)" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
             <div id="imagePreviewBox" class="mt-2 hidden">
-              <img id="imgPreview" src="" class="h-32 w-full object-cover rounded-xl border border-slate-200 shadow-sm">
+              <img id="imgPreview" src="" class="h-36 w-full object-cover rounded-xl border border-slate-200 shadow-sm">
             </div>
           </div>
 
@@ -172,7 +174,7 @@
             <label class="block text-xs font-bold text-slate-600 mb-1">Prévia Expandida da Rota no Mapa</label>
             <input type="hidden" id="wpMapaUrl">
             <div id="mapEmbedContainer" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative shadow-inner">
-              <span class="text-xs text-slate-400">Clique em "Auto Gerar" após digitar o local para exibir o mapa.</span>
+              <span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar a rota no mapa.</span>
             </div>
           </div>
 
@@ -207,10 +209,12 @@
       loadWaypoints();
     });
 
+    // Força o Flatpickr Customizado mesmo no Android/iOS
     function initFlatpickr() {
       if (fpInstance) fpInstance.destroy();
       
       fpInstance = flatpickr("#wpDataHora", {
+        disableMobile: true, // Força a interface roxa do calendário no mobile
         enableTime: true,
         dateFormat: "Y-m-d H:i",
         altInput: true,
@@ -333,7 +337,7 @@
       }).join('');
     }
 
-    // Auto Gerar: Atualiza Mapa e abre buscador de fotos
+    // Auto Gerar: Busca limpa usando exclusivamente o texto do campo
     async function autoSuggest() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
@@ -342,46 +346,31 @@
       document.getElementById("imageSearchHelper").classList.remove("hidden");
       
       const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Buscando fotos no acervo público...</div>`;
+      
+      // Gera miniaturas directas do Unsplash Source baseadas na palavra exata digitada
+      const term = encodeURIComponent(local);
+      const photoUrls = [
+        `https://source.unsplash.com/featured/600x400/?${term},view`,
+        `https://source.unsplash.com/featured/600x400/?${term},nature`,
+        `https://source.unsplash.com/featured/600x400/?${term},place`
+      ];
 
-      // Busca estrita no Wikimedia
-      try {
-        const tripSelect = document.getElementById("tripSelect");
-        const trip = tripSelect.options[tripSelect.selectedIndex].text;
-        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
-        
-        const res = await fetch(wikiUrl);
-        const data = await res.json();
-        let photos = [];
+      gallery.innerHTML = photoUrls.map((url, index) => `
+        <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-200 h-20" onclick="selectImage('${url}')">
+          <img src="${url}" class="h-full w-full object-cover" onerror="this.parentElement.remove()">
+        </div>
+      `).join('');
 
-        if (data.query && data.query.pages) {
-          Object.values(data.query.pages).forEach(page => {
-            if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url) {
-              const url = page.imageinfo[0].url;
-              if (url.match(/\.(jpeg|jpg|png|webp)$/i)) photos.push(url);
-            }
-          });
-        }
-
-        if (photos.length > 0) {
-          gallery.innerHTML = photos.map(url => `
-            <img src="${url}" onclick="selectImage('${url}')" class="h-20 w-full object-cover rounded-lg cursor-pointer border border-slate-200 hover:opacity-80 transition">
-          `).join('');
-          selectImage(photos[0]);
-        } else {
-          gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-500 py-1">Nenhuma foto automática. Clique em <b>"Abrir Fotos no Google"</b> acima para escolher a foto perfeita do local.</div>`;
-        }
-      } catch (e) {
-        gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-500 py-1">Clique em <b>"Abrir Fotos no Google"</b> acima para pegar a foto real do local.</div>`;
-      }
+      // Seleciona a primeira foto por padrão
+      selectImage(photoUrls[0]);
     }
 
+    // Pesquisa limpa no Google Imagens sem anexar o destino da viagem
     function searchGoogleImages() {
       const local = document.getElementById("wpAtividade").value.trim();
-      const tripSelect = document.getElementById("tripSelect");
-      const trip = tripSelect.options[tripSelect.selectedIndex].text;
+      if (!local) return alert("Digite o nome do local primeiro.");
       
-      const query = encodeURIComponent(`${local} ${trip}`);
+      const query = encodeURIComponent(local);
       window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
     }
 
@@ -403,13 +392,11 @@
       }
     }
 
-    // Mapa Embutido Ampliado
+    // Busca de mapa limpa (usa apenas o local exato digitado)
     function updateEmbeddedMap() {
       const localAtual = document.getElementById("wpAtividade").value.trim();
       if (!localAtual) return;
 
-      const tripSelect = document.getElementById("tripSelect");
-      const trip = tripSelect.options[tripSelect.selectedIndex].text;
       const selectedTime = new Date(document.getElementById("wpDataHora").value);
 
       const previousWp = waypointsData
@@ -418,15 +405,15 @@
 
       let mapSearchQuery = "";
       if (previousWp && previousWp.atividade_local) {
-        mapSearchQuery = `from ${previousWp.atividade_local} ${trip} to ${localAtual} ${trip}`;
+        mapSearchQuery = `from ${previousWp.atividade_local} to ${localAtual}`;
       } else {
-        mapSearchQuery = `${localAtual} ${trip}`;
+        mapSearchQuery = localAtual;
       }
 
       const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
       document.getElementById("wpMapaUrl").value = mapUrl;
 
-      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&t=&z=11&ie=UTF8&iwloc=&output=embed`;
+      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
       document.getElementById("mapEmbedContainer").innerHTML = `
         <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${embedUrl}" class="rounded-2xl"></iframe>
       `;
