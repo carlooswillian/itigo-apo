@@ -214,7 +214,7 @@
       if (fpInstance) fpInstance.destroy();
       
       fpInstance = flatpickr("#wpDataHora", {
-        disableMobile: true, // Força a interface roxa do calendário no mobile
+        disableMobile: true,
         enableTime: true,
         dateFormat: "Y-m-d H:i",
         altInput: true,
@@ -337,7 +337,22 @@
       }).join('');
     }
 
-    // Auto Gerar: Busca refinada na Wikipedia em Português e Unsplash
+    function calculateFinancials(items) {
+      let totalEst = 0;
+      let totalPago = 0;
+
+      items.forEach(item => {
+        totalEst += parseFloat(item.valor_estimado || 0);
+        totalPago += parseFloat(item.valor_pago || 0);
+      });
+
+      const restante = totalEst - totalPago;
+
+      document.getElementById("totalEstimado").innerText = `R$ ${totalEst.toFixed(2)}`;
+      document.getElementById("totalPago").innerText = `R$ ${totalPago.toFixed(2)}`;
+      document.getElementById("totalRestante").innerText = `R$ ${restante.toFixed(2)}`;
+    }
+
     async function autoSuggest() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
@@ -351,7 +366,6 @@
       let photoUrls = [];
 
       try {
-        // Busca na API da Wikipedia em Português
         const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&pithumbsize=600&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrlimit=3`;
         const resWiki = await fetch(wikiUrl);
         const dataWiki = await resWiki.json();
@@ -364,7 +378,6 @@
           });
         }
 
-        // Fallback de imagens de paisagem neutras caso o local específico não esteja na Wikipedia
         if (photoUrls.length === 0) {
           photoUrls = [
             `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80`,
@@ -392,7 +405,6 @@
       }
     }
 
-    // Pesquisa limpa no Google Imagens usando apenas o nome digitado
     function searchGoogleImages() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
@@ -419,12 +431,12 @@
       }
     }
 
-    // Busca de mapa limpa (usa apenas o local exato digitado)
     function updateEmbeddedMap() {
       const localAtual = document.getElementById("wpAtividade").value.trim();
       if (!localAtual) return;
 
-      const selectedTime = new Date(document.getElementById("wpDataHora").value);
+      const timeVal = document.getElementById("wpDataHora").value;
+      const selectedTime = timeVal ? new Date(timeVal) : new Date();
 
       const previousWp = waypointsData
         .filter(w => new Date(w.data_hora) < selectedTime)
@@ -447,7 +459,10 @@
     }
 
     function checkDistancePreview() {
-      const selectedTime = new Date(document.getElementById("wpDataHora").value);
+      const timeVal = document.getElementById("wpDataHora").value;
+      if (!timeVal) return;
+      
+      const selectedTime = new Date(timeVal);
       if (isNaN(selectedTime)) return;
 
       const previous = waypointsData
@@ -509,75 +524,70 @@
       }
     }
 
+    async function saveQuickPay(id) {
+      const valInput = document.getElementById(`quickPay_${id}`);
+      const valor = valInput ? valInput.value : 0;
+
+      const payload = {
+        pin: currentPin,
+        action: "updateQuickPay",
+        id: id,
+        valor_pago: valor
+      };
+
+      try {
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const result = await res.json();
+
+        if (result.success) {
+          loadWaypoints();
+        } else {
+          alert(result.message);
+        }
+      } catch (err) {
+        alert("Erro ao atualizar pagamento rápido.");
+      }
+    }
+
     function editWaypoint(id) {
       const item = waypointsData.find(w => String(w.id) === String(id));
       if (!item) return;
 
       document.getElementById("wpId").value = item.id;
       document.getElementById("wpAtividade").value = item.atividade_local;
-      
+      document.getElementById("wpValorEstimado").value = item.valor_estimado || "";
+      document.getElementById("wpValorPago").value = item.valor_pago || "";
+      document.getElementById("wpImagemUrl").value = item.imagem_url || "";
+      document.getElementById("wpMapaUrl").value = item.mapa_url || "";
+      document.getElementById("wpSocialUrl").value = item.social_url || "";
+      document.getElementById("wpObservacoes").value = item.observacoes || "";
+
+      document.getElementById("modalFormTitle").innerText = "Editar Ponto";
+
       openAdminModal();
       document.getElementById("pinStep").classList.add("hidden");
       document.getElementById("formStep").classList.remove("hidden");
 
-      setTimeout(() => {
-        initFlatpickr();
-        if (fpInstance && item.data_hora) {
-          fpInstance.setDate(item.data_hora);
-        }
-      }, 100);
+      initFlatpickr();
+      if (item.data_hora && fpInstance) {
+        fpInstance.setDate(item.data_hora);
+      }
 
-      document.getElementById("wpValorEstimado").value = item.valor_estimado;
-      document.getElementById("wpValorPago").value = item.valor_pago;
-      document.getElementById("wpMapaUrl").value = item.mapa_url;
-      document.getElementById("wpImagemUrl").value = item.imagem_url;
-      document.getElementById("wpSocialUrl").value = item.social_url || '';
-      document.getElementById("wpObservacoes").value = item.observacoes;
-
-      document.getElementById("modalFormTitle").innerText = "Editar Ponto";
       previewImageURL();
       updateEmbeddedMap();
     }
 
-    async function saveQuickPay(id) {
-      const valor = document.getElementById(`quickPay_${id}`).value;
-      if (valor === "") return;
-
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            pin: currentPin,
-            action: "updateQuickPay",
-            id: id,
-            valor_pago: parseFloat(valor)
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
-          loadWaypoints();
-        } else {
-          alert(data.message);
-        }
-      } catch (err) {
-        alert("Erro ao atualizar valor.");
-      }
-    }
-
-    function calculateFinancials(items) {
-      let est = 0, pag = 0;
-      items.forEach(i => {
-        est += parseFloat(i.valor_estimado || 0);
-        pag += parseFloat(i.valor_pago || 0);
-      });
-
-      document.getElementById("totalEstimado").innerText = `R$ ${est.toFixed(2)}`;
-      document.getElementById("totalPago").innerText = `R$ ${pag.toFixed(2)}`;
-      document.getElementById("totalRestante").innerText = `R$ ${(est - pag).toFixed(2)}`;
-    }
-
     function openAdminModal() {
       document.getElementById("adminModal").classList.remove("hidden");
+      if (!currentPin) {
+        document.getElementById("pinStep").classList.remove("hidden");
+        document.getElementById("formStep").classList.add("hidden");
+      } else {
+        document.getElementById("pinStep").classList.add("hidden");
+        document.getElementById("formStep").classList.remove("hidden");
+        document.getElementById("modalFormTitle").innerText = "Adicionar Novo Ponto";
+        initFlatpickr();
+      }
     }
 
     function closeAdminModal() {
@@ -585,16 +595,16 @@
     }
 
     function verifyPin() {
-      const input = document.getElementById("pinInput").value;
-      if (input === "1304") {
-        currentPin = input;
-        document.getElementById("adminStatusText").innerText = "Admin Ativo";
+      const pin = document.getElementById("pinInput").value;
+      if (pin === "1304") {
+        currentPin = pin;
         document.getElementById("pinStep").classList.add("hidden");
         document.getElementById("formStep").classList.remove("hidden");
+        document.getElementById("adminStatusText").innerText = "Admin Ativo";
         initFlatpickr();
         renderWaypoints(waypointsData);
       } else {
-        alert("PIN incorreto!");
+        alert("PIN Incorreto!");
       }
     }
   </script>
