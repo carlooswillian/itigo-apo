@@ -1,856 +1,391 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ItiGo - Seu Roteiro Inteligente</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            500: '#14b8a6',
-                            600: '#0d9488',
-                            700: '#0f766e',
-                            900: '#134e4a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ItiGo - Roteiros Rápidos</title>
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
 
-    <!-- HEADER / NAVIGATION -->
-    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-teal-500/20">
-                    <i class="fa-solid fa-compass"></i>
-                </div>
-                <div>
-                    <span class="text-xl font-extrabold bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">ItiGo</span>
-                    <span class="text-xs block text-slate-400 font-medium">Smart Travel Companion</span>
-                </div>
-            </div>
+  <!-- Configuração da API do Apps Script -->
+  <script>
+    // SUBSTITUTE PELA SUA URL GERADA NO PASSO DE IMPLANTAÇÃO
+    const SCRIPT_URL = "SUA_URL_DO_APPS_SCRIPT_AQUI";
+  </script>
 
-            <!-- Trip Selector & Status -->
-            <div class="flex items-center space-x-3">
-                <div class="relative">
-                    <select id="tripSelect" onchange="switchTrip(this.value)" class="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-44 sm:w-64 p-2.5 font-semibold transition">
-                        <option value="">Carregando viagens...</option>
-                    </select>
-                </div>
-                
-                <button onclick="openNewTripModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm px-3.5 py-2.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
-                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Nova Viagem</span>
-                </button>
-            </div>
+  <!-- Header -->
+  <header class="sticky top-0 z-40 glass border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="bg-indigo-600 text-white p-2 rounded-xl shadow">
+        <i data-lucide="compass" class="w-5 h-5"></i>
+      </div>
+      <h1 class="font-bold text-xl tracking-tight text-slate-900">Iti<span class="text-indigo-600">Go</span></h1>
+    </div>
+    
+    <button id="btnPin" onclick="abrirModalPin()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
+      <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500" id="iconLock"></i>
+      <span id="txtAdmin">Modo Leitura</span>
+    </button>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- Seletor de Viagem -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Viagem Selecionada</label>
+        <button id="btnNovaViagem" onclick="abrirModalViagem()" class="hidden text-xs text-indigo-600 font-bold hover:underline flex items-center gap-1">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nova Viagem
+        </button>
+      </div>
+      <select id="selectViagem" onchange="carregarRoteiro()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">Carregando viagens...</option>
+      </select>
+
+      <!-- Resumo Financeiro Card -->
+      <div id="cardFinanceiro" class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
+        <div class="bg-slate-50 p-2.5 rounded-xl">
+          <span class="block text-[10px] font-bold text-slate-400 uppercase">Estimado</span>
+          <span id="totalEstimado" class="text-sm font-extrabold text-slate-700">R$ 0</span>
         </div>
-    </header>
-
-    <!-- MAIN APP CONTENT -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
-        <!-- TOP INFO BANNER & METRICS -->
-        <div id="tripHeaderBanner" class="hidden mb-6 bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-            <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
-                <i class="fa-solid fa-plane-departure"></i>
-            </div>
-            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h1 id="currentTripTitle" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</h1>
-                        <span id="currentTripStatus" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">Planejada</span>
-                    </div>
-                    <p id="currentTripDates" class="text-sm text-slate-300 mt-1 flex items-center gap-2">
-                        <i class="fa-regular fa-calendar"></i> Data não definida
-                    </p>
-                </div>
-
-                <!-- Financial Quick Summary -->
-                <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 w-full md:w-auto justify-between md:justify-start">
-                    <div class="text-left">
-                        <span class="text-xs text-slate-300 block">Estimado Total</span>
-                        <span id="summaryEstimado" class="text-lg font-bold text-slate-100">R$ 0,00</span>
-                    </div>
-                    <div class="h-8 w-px bg-white/20"></div>
-                    <div class="text-left">
-                        <span class="text-xs text-slate-300 block">Pago até agora</span>
-                        <span id="summaryPago" class="text-lg font-bold text-emerald-400">R$ 0,00</span>
-                    </div>
-                    <div class="h-8 w-px bg-white/20"></div>
-                    <div class="text-left">
-                        <span class="text-xs text-slate-300 block">Pendente</span>
-                        <span id="summaryPendente" class="text-lg font-bold text-amber-300">R$ 0,00</span>
-                    </div>
-                </div>
-            </div>
+        <div class="bg-emerald-50 p-2.5 rounded-xl">
+          <span class="block text-[10px] font-bold text-emerald-600 uppercase">Pago</span>
+          <span id="totalPago" class="text-sm font-extrabold text-emerald-700">R$ 0</span>
         </div>
-
-        <!-- TABS BAR -->
-        <div class="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto custom-scrollbar">
-            <button id="tabBtn-roteiro" onclick="switchTab('roteiro')" class="tab-btn py-3 px-5 text-sm font-bold border-b-2 border-teal-600 text-teal-600 flex items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-map-location-dot"></i> Roteiro & Despesas
-            </button>
-            <button id="tabBtn-admin" onclick="switchTab('admin')" class="tab-btn py-3 px-5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-lock text-amber-500"></i> Gestão de Waypoints (PIN)
-            </button>
-            <button id="tabBtn-checklist" onclick="switchTab('checklist')" class="tab-btn py-3 px-5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-list-check"></i> Checklist da Viagem
-            </button>
+        <div class="bg-amber-50 p-2.5 rounded-xl">
+          <span class="block text-[10px] font-bold text-amber-600 uppercase">Falta</span>
+          <span id="totalFalta" class="text-sm font-extrabold text-amber-700">R$ 0</span>
         </div>
-
-        <!-- TAB 1: ROTEIRO & DESPESAS (VISUALIZAÇÃO PÚBLICA + LANÇAMENTO DE PAGO) -->
-        <div id="tabContent-roteiro" class="tab-content">
-            <div id="waypointsViewerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Dynamic Waypoint Cards will be inserted here -->
-            </div>
-        </div>
-
-        <!-- TAB 2: GESTÃO DE WAYPOINTS (PROTEGIDO POR PIN) -->
-        <div id="tabContent-admin" class="tab-content hidden">
-            
-            <!-- PIN LOCK SCREEN -->
-            <div id="pinLockScreen" class="max-w-md mx-auto my-12 bg-white rounded-2xl p-8 shadow-xl border border-slate-100 text-center">
-                <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h2 class="text-xl font-bold text-slate-800 mb-2">Área de Administração</h2>
-                <p class="text-slate-500 text-sm mb-6">Insira o PIN de segurança para criar e alterar waypoints e itens do banco de dados.</p>
-                
-                <div class="flex justify-center gap-2 mb-6">
-                    <input type="password" maxlength="4" id="pinInput" placeholder="••••" class="w-36 text-center text-2xl tracking-widest py-2 border-2 border-slate-300 rounded-xl focus:border-teal-500 focus:outline-none font-mono">
-                </div>
-
-                <button onclick="unlockAdmin()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition shadow-md">
-                    Desbloquear Acesso
-                </button>
-            </div>
-
-            <!-- PROTECTED CONTENT PANEL -->
-            <div id="adminPanel" class="hidden space-y-8">
-                
-                <!-- NEW WAYPOINT FORM CARD -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-location-dot text-teal-600"></i> Adicionar / Editar Waypoint
-                        </h3>
-                        <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
-                            <i class="fa-solid fa-lock-open"></i> PIN Autenticado
-                        </span>
-                    </div>
-
-                    <form id="waypointForm" onsubmit="handleSaveWaypoint(event)" class="space-y-4">
-                        <input type="hidden" id="wp_id">
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Data & Hora</label>
-                                <input type="datetime-local" id="wp_data_hora" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Atividade / Local</label>
-                                <input type="text" id="wp_atividade_local" placeholder="Ex: Voo para Lisboa ou Coliseu de Roma" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Valor Estimado (R$)</label>
-                                <input type="number" step="0.01" id="wp_valor_estimado" placeholder="0.00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Valor Pago (R$)</label>
-                                <input type="number" step="0.01" id="wp_valor_pago" placeholder="0.00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL do Mapa (Google Maps)</label>
-                                <input type="url" id="wp_mapa_url" placeholder="https://maps.google.com/..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL de Imagem / Foto</label>
-                                <input type="url" id="wp_imagem_url" placeholder="https://..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Social / Ingressos</label>
-                                <input type="url" id="wp_social_url" placeholder="https://instagram.com/..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Observações / Dicas</label>
-                            <textarea id="wp_observacoes" rows="2" placeholder="Ex: Levar passaporte original, código do ticket #12345..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500"></textarea>
-                        </div>
-
-                        <div class="flex items-center gap-3 pt-2">
-                            <button type="submit" id="btnSaveWp" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-6 rounded-lg transition shadow">
-                                <i class="fa-solid fa-floppy-disk mr-1"></i> Salvar Waypoint
-                            </button>
-                            <button type="button" onclick="resetWaypointForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-4 rounded-lg transition">
-                                Limpar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- TABLE OF WAYPOINTS FOR EDIT / DELETE -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                        <h4 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Waypoints Cadastrados</h4>
-                        <span id="wpCountBadge" class="text-xs font-bold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">0 itens</span>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-600">
-                            <thead class="bg-slate-100 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3">Data/Hora</th>
-                                    <th class="p-3">Atividade / Local</th>
-                                    <th class="p-3">Estimado</th>
-                                    <th class="p-3">Pago</th>
-                                    <th class="p-3 text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminWaypointsTable" class="divide-y divide-slate-200">
-                                <!-- Dynamic Rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- TAB 3: CHECKLIST DA VIAGEM -->
-        <div id="tabContent-checklist" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-clipboard-check text-teal-600"></i> Adicionar Novo Item na Mala/Checklist
-                </h3>
-                <form onsubmit="handleSaveChecklist(event)" class="flex flex-col sm:flex-row gap-3">
-                    <input type="text" id="chk_categoria" placeholder="Categoria (Ex: Documentos, Roupas)" required class="sm:w-1/3 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                    <input type="text" id="chk_item" placeholder="Nome do Item (Ex: Passaporte, Adaptador Tomada)" required class="sm:w-2/3 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                    <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-6 rounded-lg transition shadow shrink-0">
-                        <i class="fa-solid fa-plus mr-1"></i> Adicionar
-                    </button>
-                </form>
-            </div>
-
-            <div id="checklistCategoriesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Dynamic Checklist Categories -->
-            </div>
-        </div>
-
-    </main>
-
-    <!-- NEW TRIP MODAL -->
-    <div id="newTripModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onclick="closeNewTripModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-            
-            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-plane text-teal-600"></i> Criar Novo Roteiro
-            </h3>
-
-            <form onsubmit="handleCreateTrip(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nome da Viagem</label>
-                    <input type="text" id="trip_nome" placeholder="Ex: EuroTrip 2026, Mochilão Chile" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Data Início</label>
-                        <input type="date" id="trip_data_inicio" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Data Fim</label>
-                        <input type="date" id="trip_data_fim" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                    </div>
-                </div>
-
-                <div class="pt-2">
-                    <button type="submit" id="btnCreateTrip" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition shadow-md">
-                        Criar e Selecionar
-                    </button>
-                </div>
-            </form>
-        </div>
+      </div>
     </div>
 
-    <!-- GLOBAL LOADING SPINNER -->
-    <div id="globalSpinner" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center hidden">
-        <div class="bg-white p-5 rounded-2xl shadow-xl flex items-center gap-3">
-            <div class="animate-spin rounded-full h-8 w-8 border-4 border-teal-500 border-t-transparent"></div>
-            <span class="text-sm font-bold text-slate-700">Carregando dados...</span>
-        </div>
+    <!-- Lista de Waypoints / Roteiro -->
+    <div class="space-y-3" id="listaWaypoints">
+      <!-- Inserido dinamicamente via JS -->
     </div>
 
-    <!-- APP SCRIPT -->
-    <script>
-        // CONFIG & STATE MANAGEMENT
-        const API_URL = "https://script.google.com/macros/s/AKfycbyvlltkuspMMfkpbSbHXujbKBYKVJ-AMSSBURae5RUP0qaLmvM97N2LJg5xdynfdKS1/exec";
-        const ADMIN_PIN = "1304";
-        
-        let appState = {
-            trips: [],
-            currentTripId: "",
-            waypoints: [],
-            checklist: [],
-            isAdminUnlocked: false
-        };
+  </main>
 
-        // INITIALIZATION
-        document.addEventListener('DOMContentLoaded', () => {
-            loadInitialData();
-        });
+  <!-- Botão Flutuante Adicionar Waypoint (Somente Admin) -->
+  <button id="btnAddWaypoint" onclick="abrirModalWaypoint()" class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 active:scale-90 transition z-30">
+    <i data-lucide="plus" class="w-6 h-6"></i>
+  </button>
 
-        async function loadInitialData() {
-            showSpinner(true);
-            try {
-                const res = await fetch(`${API_URL}?action=getTrips`);
-                const tripsData = await res.json();
-                appState.trips = tripsData;
+  <!-- Modal PIN -->
+  <div id="modalPin" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
+      <h3 class="font-bold text-slate-900 text-center text-lg">Digite o PIN</h3>
+      <input type="password" id="inputPin" maxlength="6" class="w-full text-center text-2xl font-bold tracking-widest bg-slate-100 border border-slate-200 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••">
+      <div class="flex gap-2">
+        <button onclick="fecharModalPin()" class="w-1/2 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="confirmarPin()" class="w-1/2 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl shadow">Acessar</button>
+      </div>
+    </div>
+  </div>
 
-                renderTripSelector();
+  <!-- Modal Nova Viagem -->
+  <div id="modalViagem" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+      <h3 class="font-bold text-slate-900 text-lg">Nova Viagem</h3>
+      <input type="text" id="inputNomeViagem" placeholder="Ex: interior de SP/Minas (Capitólio)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <div class="flex gap-2 justify-end">
+        <button onclick="fecharModalViagem()" class="px-4 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="salvarViagem()" class="px-4 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl shadow">Salvar</button>
+      </div>
+    </div>
+  </div>
 
-                if (tripsData.length > 0) {
-                    const activeTrip = tripsData.find(t => t.status === 'ativa') || tripsData[0];
-                    appState.currentTripId = activeTrip.trip_id;
-                    document.getElementById('tripSelect').value = activeTrip.trip_id;
-                    await loadTripDetails(activeTrip.trip_id);
-                } else {
-                    document.getElementById('tripHeaderBanner').classList.add('hidden');
-                    alert("Nenhuma viagem encontrada. Crie sua primeira viagem para começar!");
-                    openNewTripModal();
-                }
-            } catch (err) {
-                console.error("Erro ao carregar dados do Apps Script:", err);
-                alert("Erro de conexão com o banco de dados.");
-            } finally {
-                showSpinner(false);
-            }
+  <!-- Modal Adicionar / Editar Waypoint -->
+  <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8">
+      <h3 id="tituloModalWp" class="font-bold text-slate-900 text-lg">Novo Waypoint</h3>
+      <input type="hidden" id="wpId">
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Ponto de Parada / Atividade</label>
+          <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
+            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Data e Hora</label>
+            <input type="datetime-local" id="wpDataHora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Valor Estimado (R$)</label>
+            <input type="number" step="0.01" id="wpValorEstimado" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Valor Pago (R$)</label>
+            <input type="number" step="0.01" id="wpValorPago" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Foto do Lugar (URL da Imagem)</label>
+          <input type="url" id="wpLinkFoto" placeholder="https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+          <p class="text-[10px] text-slate-400 mt-0.5">Dica: Cole o link de imagem do Google Fotos, Unsplash ou Web.</p>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Link de Vídeo / Mídia (Insta, YT)</label>
+          <input type="url" id="wpLinkMidia" placeholder="https://instagram.com/..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Observações</label>
+          <textarea id="wpObservacoes" rows="2" placeholder="Dicas de prato, horário ideal..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-2 justify-end pt-2 border-t">
+        <button onclick="fecharModalWaypoint()" class="px-4 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="salvarWaypoint()" class="px-4 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl shadow">Salvar Waypoint</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lançar Pagamento Rápido -->
+  <div id="modalPagamento" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
+      <h3 class="font-bold text-slate-900 text-lg">Registrar Pagamento</h3>
+      <input type="hidden" id="pagWpId">
+      <div>
+        <label class="text-xs font-semibold text-slate-500">Valor Pago Agora (R$)</label>
+        <input type="number" step="0.01" id="pagValorInput" class="w-full text-xl font-bold bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="fecharModalPagamento()" class="w-1/2 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="confirmarPagamentoRapido()" class="w-1/2 py-2.5 bg-emerald-600 text-white font-semibold text-sm rounded-xl shadow">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts JavaScript -->
+  <script>
+    let appData = { viagens: [], waypoints: [] };
+    let userPin = null;
+
+    window.onload = () => {
+      lucide.createIcons();
+      carregarDados();
+    };
+
+    async function API(payload) {
+      if (userPin) payload.pin = userPin;
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    }
+
+    async function carregarDados() {
+      try {
+        const res = await API({ action: 'getDados' });
+        if (res.sucesso) {
+          appData = res;
+          renderizarSeletorViagem();
         }
+      } catch(e) {
+        alert("Erro ao conectar com a planilha. Verifique a URL do Script.");
+      }
+    }
 
-        async function loadTripDetails(tripId) {
-            showSpinner(true);
-            try {
-                const currentTrip = appState.trips.find(t => t.trip_id == tripId);
-                updateTripHeader(currentTrip);
+    function renderizarSeletorViagem() {
+      const select = document.getElementById('selectViagem');
+      select.innerHTML = '';
 
-                const [wpRes, chkRes] = await Promise.all([
-                    fetch(`${API_URL}?action=getWaypoints&trip_id=${tripId}`),
-                    fetch(`${API_URL}?action=getChecklist&trip_id=${tripId}`)
-                ]);
+      if (appData.viagens.length === 0) {
+        select.innerHTML = '<option value="">Nenhuma viagem encontrada</option>';
+        return;
+      }
 
-                appState.waypoints = await wpRes.json();
-                appState.checklist = await chkRes.json();
+      appData.viagens.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = v.nome;
+        select.appendChild(opt);
+      });
 
-                renderWaypointsViewer();
-                renderWaypointsAdminTable();
-                renderChecklist();
-                updateFinancialSummary();
+      carregarRoteiro();
+    }
 
-            } catch (err) {
-                console.error("Erro ao carregar detalhes da viagem:", err);
-            } finally {
-                showSpinner(false);
-            }
-        }
+    function carregarRoteiro() {
+      const idViagem = document.getElementById('selectViagem').value;
+      const container = document.getElementById('listaWaypoints');
+      container.innerHTML = '';
 
-        // RENDER FUNCTIONS
-        function renderTripSelector() {
-            const select = document.getElementById('tripSelect');
-            select.innerHTML = '';
-            appState.trips.forEach(trip => {
-                const opt = document.createElement('option');
-                opt.value = trip.trip_id;
-                opt.textContent = `${trip.nome_viagem} (${trip.status || 'planejada'})`;
-                select.appendChild(opt);
-            });
-        }
+      const waypoints = appData.waypoints.filter(w => w.idViagem === idViagem);
 
-        function updateTripHeader(trip) {
-            const banner = document.getElementById('tripHeaderBanner');
-            if (!trip) {
-                banner.classList.add('hidden');
-                return;
-            }
-            banner.classList.remove('hidden');
-            document.getElementById('currentTripTitle').textContent = trip.nome_viagem;
-            document.getElementById('currentTripStatus').textContent = (trip.status || 'planejada').toUpperCase();
+      // Calcular totais
+      let est = 0, pago = 0;
+      waypoints.forEach(w => {
+        est += w.valorEstimado;
+        pago += w.valorPago;
+      });
+
+      document.getElementById('totalEstimado').textContent = `R$ ${est.toFixed(2)}`;
+      document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
+      document.getElementById('totalFalta').textContent = `R$ ${(est - pago).toFixed(2)}`;
+
+      if (waypoints.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium text-sm">Nenhum ponto adicionado a esta viagem.</div>`;
+        return;
+      }
+
+      waypoints.forEach(w => {
+        const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
+        const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition";
+
+        card.innerHTML = `
+          ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
+          <div class="p-4 space-y-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Ponto de Parada'}</span>
+                <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
+              </div>
+              <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
+                <i data-lucide="map-pin" class="w-5 h-5"></i>
+              </a>
+            </div>
+
+            ${w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
             
-            const dtInit = trip.data_inicio ? formatDate(trip.data_inicio) : '';
-            const dtFim = trip.data_fim ? formatDate(trip.data_fim) : '';
-            document.getElementById('currentTripDates').innerHTML = `<i class="fa-regular fa-calendar"></i> ${dtInit} até ${dtFim}`;
-        }
+            ${w.observacoes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${w.observacoes}</p>` : ''}
 
-        function updateFinancialSummary() {
-            let totalEstimado = 0;
-            let totalPago = 0;
-
-            appState.waypoints.forEach(wp => {
-                totalEstimado += parseFloat(wp.valor_estimado || 0);
-                totalPago += parseFloat(wp.valor_pago || 0);
-            });
-
-            const pendente = Math.max(0, totalEstimado - totalPago);
-
-            document.getElementById('summaryEstimado').textContent = formatCurrency(totalEstimado);
-            document.getElementById('summaryPago').textContent = formatCurrency(totalPago);
-            document.getElementById('summaryPendente').textContent = formatCurrency(pendente);
-        }
-
-        function renderWaypointsViewer() {
-            const container = document.getElementById('waypointsViewerList');
-            container.innerHTML = '';
-
-            if (appState.waypoints.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
-                        <i class="fa-solid fa-map-pin text-4xl mb-3 text-slate-300 block"></i>
-                        Nenhum waypoint ou atividade adicionada para esta viagem ainda.
-                    </div>
-                `;
-                return;
-            }
-
-            const sorted = [...appState.waypoints].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
-
-            sorted.forEach(wp => {
-                const isPaid = (wp.pago === true || wp.pago === 'true' || wp.pago === 'VERDADEIRO');
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition";
-
-                const imgHtml = wp.imagem_url ? 
-                    `<div class="h-40 w-full bg-cover bg-center" style="background-image: url('${wp.imagem_url}')"></div>` : '';
-
-                card.innerHTML = `
-                    <div>
-                        ${imgHtml}
-                        <div class="p-5">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <span class="text-xs font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100 flex items-center gap-1">
-                                    <i class="fa-regular fa-clock"></i> ${formatDateTime(wp.data_hora)}
-                                </span>
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded ${isPaid ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                                    ${isPaid ? 'Pago' : 'Pendente'}
-                                </span>
-                            </div>
-
-                            <h3 class="text-lg font-bold text-slate-800 mb-2">${wp.atividade_local}</h3>
-                            
-                            ${wp.observacoes ? `<p class="text-slate-600 text-sm mb-4 bg-slate-50 p-2.5 rounded-lg border border-slate-100">${wp.observacoes}</p>` : ''}
-
-                            <div class="flex flex-wrap gap-2 mb-4">
-                                ${wp.mapa_url ? `<a href="${wp.mapa_url}" target="_blank" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"><i class="fa-solid fa-map-location-dot text-rose-500"></i> Ver Mapa</a>` : ''}
-                                ${wp.social_url ? `<a href="${wp.social_url}" target="_blank" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"><i class="fa-solid fa-link text-blue-500"></i> Link / Ingresso</a>` : ''}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <div>
-                            <span class="text-xs text-slate-400 block font-medium">Estimado: ${formatCurrency(wp.valor_estimado)}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="number" step="0.01" id="paid_input_${wp.id}" value="${wp.valor_pago || ''}" placeholder="Valor Pago" class="w-24 border border-slate-300 rounded-lg p-1.5 text-xs text-right focus:ring-teal-500 focus:border-teal-500 font-semibold">
-                            <button onclick="handleQuickPaymentUpdate('${wp.id}')" title="Atualizar valor pago" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs transition">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function renderWaypointsAdminTable() {
-            const table = document.getElementById('adminWaypointsTable');
-            table.innerHTML = '';
-            document.getElementById('wpCountBadge').textContent = `${appState.waypoints.length} itens`;
-
-            appState.waypoints.forEach(wp => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <div>
+                <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
+                <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
+                <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-emerald-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                ${w.linkMidia ? `<a href="${w.linkMidia}" target="_blank" class="text-rose-500 bg-rose-50 p-2 rounded-xl" title="Ver Vídeo"><i data-lucide="video" class="w-4 h-4"></i></a>` : ''}
                 
-                const safeWp = JSON.stringify(wp).replace(/'/g, "&apos;");
-                
-                tr.innerHTML = `
-                    <td class="p-3 text-xs font-mono">${formatDateTime(wp.data_hora)}</td>
-                    <td class="p-3 font-semibold text-slate-800">${wp.atividade_local}</td>
-                    <td class="p-3 text-slate-600">${formatCurrency(wp.valor_estimado)}</td>
-                    <td class="p-3 text-emerald-600 font-semibold">${formatCurrency(wp.valor_pago)}</td>
-                    <td class="p-3 text-center space-x-1">
-                        <button onclick='editWaypoint(${safeWp})' class="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="handleDeleteWaypoint('${wp.id}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 p-2 rounded-lg transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                table.appendChild(tr);
-            });
-        }
+                <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-200 hover:bg-emerald-100 active:scale-95 transition">
+                  Pagar
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
 
-        function renderChecklist() {
-            const container = document.getElementById('checklistCategoriesContainer');
-            container.innerHTML = '';
+      lucide.createIcons();
+    }
 
-            if (appState.checklist.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
-                        <i class="fa-solid fa-suitcase text-4xl mb-3 text-slate-300 block"></i>
-                        Nenhum item na sua mala ainda. Adicione itens acima!
-                    </div>
-                `;
-                return;
-            }
+    function formatarData(dataStr) {
+      if(!dataStr) return '';
+      const d = new Date(dataStr);
+      return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
 
-            const grouped = {};
-            appState.checklist.forEach(item => {
-                const cat = item.categoria || 'Geral';
-                if (!grouped[cat]) grouped[cat] = [];
-                grouped[cat].push(item);
-            });
+    // Modal Controle PIN
+    function abrirModalPin() { document.getElementById('modalPin').classList.remove('hidden'); }
+    function fecharModalPin() { document.getElementById('modalPin').classList.add('hidden'); }
 
-            for (const category in grouped) {
-                const catCard = document.createElement('div');
-                catCard.className = "bg-white rounded-2xl p-5 shadow-sm border border-slate-200";
-                
-                let itemsHtml = '';
-                grouped[category].forEach(item => {
-                    const isChecked = (item.checado === true || item.checado === 'true' || item.checado === 'VERDADEIRO');
-                    itemsHtml += `
-                        <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                            <label class="flex items-center gap-3 cursor-pointer select-none">
-                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleToggleChecklist(${item.row_index || 0}, '${item.item}', '${item.categoria}', this.checked)" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
-                                <span class="text-sm font-medium ${isChecked ? 'line-through text-slate-400' : 'text-slate-700'}">${item.item}</span>
-                            </label>
-                        </div>
-                    `;
-                });
+    async function confirmarPin() {
+      const pin = document.getElementById('inputPin').value;
+      const res = await API({ action: 'validarPin', pin: pin });
+      if (res.sucesso) {
+        userPin = pin;
+        document.getElementById('txtAdmin').textContent = "Modo Edição";
+        document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
+        document.getElementById('btnNovaViagem').classList.remove('hidden');
+        document.getElementById('btnAddWaypoint').classList.remove('hidden');
+        lucide.createIcons();
+        fecharModalPin();
+      } else {
+        alert("PIN Incorreto!");
+      }
+    }
 
-                catCard.innerHTML = `
-                    <h4 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
-                        <span><i class="fa-solid fa-folder text-teal-500 mr-2"></i> ${category}</span>
-                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">${grouped[category].length}</span>
-                    </h4>
-                    <div class="space-y-1">
-                        ${itemsHtml}
-                    </div>
-                `;
-                container.appendChild(catCard);
-            }
-        }
+    // Modal Viagem
+    function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
+    function fecharModalViagem() { document.getElementById('modalViagem').classList.add('hidden'); }
 
-        // HANDLERS & ACTIONS
-        async function switchTrip(tripId) {
-            if (!tripId) return;
-            appState.currentTripId = tripId;
-            await loadTripDetails(tripId);
-        }
+    async function salvarViagem() {
+      const nome = document.getElementById('inputNomeViagem').value;
+      if(!nome) return;
+      const res = await API({ action: 'criarViagem', nomeViagem: nome });
+      if (res.sucesso) {
+        fecharModalViagem();
+        await carregarDados();
+        document.getElementById('selectViagem').value = res.id;
+        carregarRoteiro();
+      }
+    }
 
-        function switchTab(tabKey) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-teal-600', 'text-teal-600');
-                btn.classList.add('border-transparent', 'text-slate-500');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
+    // Modal Waypoint
+    function abrirModalWaypoint() { document.getElementById('modalWaypoint').classList.remove('hidden'); }
+    function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
 
-            document.getElementById(`tabBtn-${tabKey}`).classList.add('border-teal-600', 'text-teal-600');
-            document.getElementById(`tabBtn-${tabKey}`).classList.remove('border-transparent', 'text-slate-500');
-            document.getElementById(`tabContent-${tabKey}`).classList.remove('hidden');
-        }
+    async function salvarWaypoint() {
+      const idViagem = document.getElementById('selectViagem').value;
+      const nomeViagem = document.getElementById('selectViagem').options[document.getElementById('selectViagem').selectedIndex].text;
 
-        function unlockAdmin() {
-            const pin = document.getElementById('pinInput').value;
-            if (pin === ADMIN_PIN) {
-                appState.isAdminUnlocked = true;
-                document.getElementById('pinLockScreen').classList.add('hidden');
-                document.getElementById('adminPanel').classList.remove('hidden');
-            } else {
-                alert("PIN Incorreto! Tente novamente.");
-            }
-        }
+      const wp = {
+        idViagem: idViagem,
+        nomeViagem: nomeViagem,
+        atividade: document.getElementById('wpAtividade').value,
+        cidade: document.getElementById('wpCidade').value,
+        dataHora: document.getElementById('wpDataHora').value,
+        valorEstimado: parseFloat(document.getElementById('wpValorEstimado').value) || 0,
+        valorPago: parseFloat(document.getElementById('wpValorPago').value) || 0,
+        linkFoto: document.getElementById('wpLinkFoto').value,
+        linkMidia: document.getElementById('wpLinkMidia').value,
+        observacoes: document.getElementById('wpObservacoes').value
+      };
 
-        async function handleSaveWaypoint(e) {
-            e.preventDefault();
-            
-            if (!appState.currentTripId) {
-                alert("Selecione ou crie uma viagem primeiro.");
-                return;
-            }
+      const res = await API({ action: 'salvarWaypoint', waypoint: wp });
+      if(res.sucesso) {
+        fecharModalWaypoint();
+        await carregarDados();
+      }
+    }
 
-            showSpinner(true);
+    // Modal Pagamento Rápido
+    function abrirModalPagamento(id, valorAtual) {
+      document.getElementById('pagWpId').value = id;
+      document.getElementById('pagValorInput').value = valorAtual;
+      document.getElementById('modalPagamento').classList.remove('hidden');
+    }
+    function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
 
-            const wp = {
-                id: document.getElementById('wp_id').value || 'wp_' + Date.now(),
-                trip_id: appState.currentTripId,
-                data_hora: document.getElementById('wp_data_hora').value,
-                atividade_local: document.getElementById('wp_atividade_local').value,
-                valor_estimado: parseFloat(document.getElementById('wp_valor_estimado').value) || 0,
-                valor_pago: parseFloat(document.getElementById('wp_valor_pago').value) || 0,
-                pago: (parseFloat(document.getElementById('wp_valor_pago').value) || 0) > 0,
-                observacoes: document.getElementById('wp_observacoes').value,
-                mapa_url: document.getElementById('wp_mapa_url').value,
-                imagem_url: document.getElementById('wp_imagem_url').value,
-                social_url: document.getElementById('wp_social_url').value
-            };
+    async function confirmarPagamentoRapido() {
+      const id = document.getElementById('pagWpId').value;
+      const val = parseFloat(document.getElementById('pagValorInput').value) || 0;
 
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'saveWaypoint', waypoint: wp })
-                });
-
-                resetWaypointForm();
-                await loadTripDetails(appState.currentTripId);
-            } catch (err) {
-                console.error("Erro ao salvar waypoint:", err);
-            } finally {
-                showSpinner(false);
-            }
-        }
-
-        async function handleQuickPaymentUpdate(wpId) {
-            const valInput = document.getElementById(`paid_input_${wpId}`);
-            const paidValue = parseFloat(valInput.value) || 0;
-
-            const targetWp = appState.waypoints.find(w => w.id == wpId);
-            if (!targetWp) return;
-
-            showSpinner(true);
-            const updatedWp = {
-                ...targetWp,
-                valor_pago: paidValue,
-                pago: paidValue > 0
-            };
-
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'saveWaypoint', waypoint: updatedWp })
-                });
-
-                await loadTripDetails(appState.currentTripId);
-            } catch (err) {
-                console.error("Erro ao atualizar valor pago:", err);
-            } finally {
-                showSpinner(false);
-            }
-        }
-
-        async function handleDeleteWaypoint(wpId) {
-            if (!confirm("Tem certeza que deseja excluir este waypoint?")) return;
-            showSpinner(true);
-
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'deleteWaypoint', id: wpId })
-                });
-
-                await loadTripDetails(appState.currentTripId);
-            } catch (err) {
-                console.error("Erro ao deletar waypoint:", err);
-            } finally {
-                showSpinner(false);
-            }
-        }
-
-        function editWaypoint(wp) {
-            document.getElementById('wp_id').value = wp.id;
-            
-            if (wp.data_hora) {
-                const dt = new Date(wp.data_hora);
-                if (!isNaN(dt.getTime())) {
-                    const isoStr = new Date(dt.getTime() - (dt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-                    document.getElementById('wp_data_hora').value = isoStr;
-                } else {
-                    document.getElementById('wp_data_hora').value = wp.data_hora.slice(0, 16);
-                }
-            } else {
-                document.getElementById('wp_data_hora').value = '';
-            }
-
-            document.getElementById('wp_atividade_local').value = wp.atividade_local || '';
-            document.getElementById('wp_valor_estimado').value = wp.valor_estimado || '';
-            document.getElementById('wp_valor_pago').value = wp.valor_pago || '';
-            document.getElementById('wp_observacoes').value = wp.observacoes || '';
-            document.getElementById('wp_mapa_url').value = wp.mapa_url || '';
-            document.getElementById('wp_imagem_url').value = wp.imagem_url || '';
-            document.getElementById('wp_social_url').value = wp.social_url || '';
-
-            document.getElementById('btnSaveWp').innerHTML = `<i class="fa-solid fa-pen mr-1"></i> Atualizar Waypoint`;
-            window.scrollTo({ top: document.getElementById('waypointForm').offsetTop - 80, behavior: 'smooth' });
-        }
-
-        function resetWaypointForm() {
-            document.getElementById('waypointForm').reset();
-            document.getElementById('wp_id').value = '';
-            document.getElementById('btnSaveWp').innerHTML = `<i class="fa-solid fa-floppy-disk mr-1"></i> Salvar Waypoint`;
-        }
-
-        async function handleSaveChecklist(e) {
-            e.preventDefault();
-            showSpinner(true);
-
-            const itemData = {
-                trip_id: appState.currentTripId,
-                categoria: document.getElementById('chk_categoria').value,
-                item: document.getElementById('chk_item').value,
-                checado: false
-            };
-
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'saveChecklist', checklistItem: itemData })
-                });
-
-                document.getElementById('chk_item').value = '';
-                await loadTripDetails(appState.currentTripId);
-            } catch (err) {
-                console.error("Erro ao salvar item de checklist:", err);
-            } finally {
-                showSpinner(false);
-            }
-        }
-
-        async function handleToggleChecklist(rowIndex, item, categoria, isChecked) {
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'saveChecklist',
-                        checklistItem: {
-                            trip_id: appState.currentTripId,
-                            categoria: categoria,
-                            item: item,
-                            checado: isChecked
-                        }
-                    })
-                });
-            } catch (err) {
-                console.error("Erro ao atualizar status do checklist:", err);
-            }
-        }
-
-        async function handleCreateTrip(e) {
-            e.preventDefault();
-            showSpinner(true);
-
-            const newTrip = {
-                trip_id: 'trip_' + Date.now(),
-                nome_viagem: document.getElementById('trip_nome').value,
-                status: 'ativa',
-                data_inicio: document.getElementById('trip_data_inicio').value,
-                data_fim: document.getElementById('trip_data_fim').value
-            };
-
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'createTrip', trip: newTrip })
-                });
-
-                closeNewTripModal();
-                await loadInitialData();
-            } catch (err) {
-                console.error("Erro ao criar nova viagem:", err);
-            } finally {
-                showSpinner(false);
-            }
-        }
-
-        // UTILITY FUNCTIONS
-        function openNewTripModal() {
-            document.getElementById('newTripModal').classList.remove('hidden');
-        }
-
-        function closeNewTripModal() {
-            document.getElementById('newTripModal').classList.add('hidden');
-        }
-
-        function showSpinner(show) {
-            document.getElementById('globalSpinner').classList.toggle('hidden', !show);
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            return isNaN(d) ? dateStr : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-
-        function formatDateTime(dateTimeStr) {
-            if (!dateTimeStr) return '';
-            const d = new Date(dateTimeStr);
-            return isNaN(d) ? dateTimeStr : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
-
-        function formatCurrency(val) {
-            const num = parseFloat(val) || 0;
-            return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-    </script>
+      const res = await API({ action: 'atualizarPagamento', idWaypoint: id, valorPago: val, statusPago: 'Sim' });
+      if(res.sucesso) {
+        fecharModalPagamento();
+        await carregarDados();
+      }
+    }
+  </script>
 </body>
 </html>
