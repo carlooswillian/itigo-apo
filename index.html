@@ -337,7 +337,7 @@
       }).join('');
     }
 
-    // Auto Gerar: Busca de imagens reais via API do Wikimedia Commons + LoremFlickr
+    // Auto Gerar: Busca refinada na Wikipedia em Português e Unsplash
     async function autoSuggest() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
@@ -346,33 +346,29 @@
       document.getElementById("imageSearchHelper").classList.remove("hidden");
       
       const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando fotos de ${local}...</div>`;
+      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando fotos reais de ${local}...</div>`;
+
+      let photoUrls = [];
 
       try {
-        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gteisearch=${encodeURIComponent(local)}&gsrsearch=${encodeURIComponent(local)}&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
-        
-        const res = await fetch(wikiUrl);
-        const data = await res.json();
-        
-        let photoUrls = [];
+        // Busca na API da Wikipedia em Português
+        const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&pithumbsize=600&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrlimit=3`;
+        const resWiki = await fetch(wikiUrl);
+        const dataWiki = await resWiki.json();
 
-        if (data.query && data.query.pages) {
-          Object.values(data.query.pages).forEach(page => {
-            if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url) {
-              const imgUrl = page.imageinfo[0].url;
-              if (imgUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
-                photoUrls.push(imgUrl);
-              }
+        if (dataWiki.query && dataWiki.query.pages) {
+          Object.values(dataWiki.query.pages).forEach(page => {
+            if (page.thumbnail && page.thumbnail.source) {
+              photoUrls.push(page.thumbnail.source);
             }
           });
         }
 
+        // Fallback de imagens de paisagem neutras caso o local específico não esteja na Wikipedia
         if (photoUrls.length === 0) {
-          const cleanTerm = encodeURIComponent(local.split(" ")[0]);
           photoUrls = [
-            `https://loremflickr.com/600/400/${cleanTerm}?lock=1`,
-            `https://loremflickr.com/600/400/${cleanTerm}?lock=2`,
-            `https://loremflickr.com/600/400/${cleanTerm}?lock=3`
+            `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80`,
+            `https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80`
           ];
         }
 
@@ -388,20 +384,15 @@
 
       } catch (err) {
         console.error("Erro na busca de imagem:", err);
-        const cleanTerm = encodeURIComponent(local.split(" ")[0]);
-        const fallbackUrl = `https://loremflickr.com/600/400/${cleanTerm}`;
         gallery.innerHTML = `
-          <div class="col-span-3">
-            <div class="relative cursor-pointer overflow-hidden rounded-lg border border-slate-200 h-20" onclick="selectImage('${fallbackUrl}')">
-              <img src="${fallbackUrl}" class="h-full w-full object-cover">
-            </div>
+          <div class="col-span-3 text-center py-2 text-xs text-slate-500">
+            Clique em <b>"Abrir Fotos no Google"</b> para escolher a foto exata e colar a URL abaixo.
           </div>
         `;
-        selectImage(fallbackUrl);
       }
     }
 
-    // Pesquisa limpa no Google Imagens sem anexar o destino da viagem
+    // Pesquisa limpa no Google Imagens usando apenas o nome digitado
     function searchGoogleImages() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
