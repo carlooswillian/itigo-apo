@@ -361,45 +361,55 @@
       document.getElementById("imageSearchHelper").classList.remove("hidden");
       
       const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando fotos reais de ${local}...</div>`;
+      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando imagens reais de "${local}"...</div>`;
 
       let photoUrls = [];
 
       try {
-        const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&pithumbsize=600&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrlimit=3`;
-        const resWiki = await fetch(wikiUrl);
-        const dataWiki = await resWiki.json();
+        // 1. Busca precisa via DuckDuckGo Images (usando CorsProxy para evitar bloqueio CORS)
+        const ddgUrl = `https://corsproxy.io/?${encodeURIComponent(`https://duckduckgo.com/i.js?q=${encodeURIComponent(local)}&o=json`)}`;
+        const resDdg = await fetch(ddgUrl);
+        const dataDdg = await resDdg.json();
 
-        if (dataWiki.query && dataWiki.query.pages) {
-          Object.values(dataWiki.query.pages).forEach(page => {
-            if (page.thumbnail && page.thumbnail.source) {
-              photoUrls.push(page.thumbnail.source);
-            }
-          });
+        if (dataDdg.results && dataDdg.results.length > 0) {
+          photoUrls = dataDdg.results.slice(0, 6).map(item => item.image);
         }
+      } catch (err) {
+        console.warn("Falha na busca primária, tentando fallback da Wikimedia...", err);
+      }
 
-        if (photoUrls.length === 0) {
-          photoUrls = [
-            `https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80`,
-            `https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80`
-          ];
+      // 2. Fallback via Wikipedia (busca direta no Commons) se o DuckDuckGo falhar
+      if (photoUrls.length === 0) {
+        try {
+          const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrlimit=4&prop=pageimages&pithumbsize=800`;
+          const resWiki = await fetch(wikiUrl);
+          const dataWiki = await resWiki.json();
+
+          if (dataWiki.query && dataWiki.query.pages) {
+            Object.values(dataWiki.query.pages).forEach(page => {
+              if (page.thumbnail && page.thumbnail.source) {
+                photoUrls.push(page.thumbnail.source);
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Erro no fallback Wikimedia:", e);
         }
+      }
 
+      // Exibição do resultado
+      if (photoUrls.length > 0) {
         gallery.innerHTML = photoUrls.map((url) => `
           <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 h-20" onclick="selectImage('${url}')">
             <img src="${url}" class="h-full w-full object-cover hover:scale-105 transition" onerror="this.parentElement.remove()">
           </div>
         `).join('');
 
-        if (photoUrls.length > 0) {
-          selectImage(photoUrls[0]);
-        }
-
-      } catch (err) {
-        console.error("Erro na busca de imagem:", err);
+        selectImage(photoUrls[0]);
+      } else {
         gallery.innerHTML = `
           <div class="col-span-3 text-center py-2 text-xs text-slate-500">
-            Clique em <b>"Abrir Fotos no Google"</b> para escolher a foto exata e colar a URL abaixo.
+            Nenhuma imagem automática encontrada. Clique em <b>"Abrir Fotos no Google"</b> para escolher manualmente.
           </div>
         `;
       }
@@ -518,7 +528,7 @@
         }
       } catch (err) {
         alert("Erro de conexão ao salvar.");
-      } finally {
+      } font-bold {
         btn.innerText = "Salvar Ponto";
         btn.disabled = false;
       }
