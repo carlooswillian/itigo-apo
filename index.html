@@ -337,7 +337,7 @@
       }).join('');
     }
 
-    // Auto Gerar: Busca limpa usando exclusivamente o texto do campo
+    // Auto Gerar: Busca de imagens reais via API do Wikimedia Commons + LoremFlickr
     async function autoSuggest() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
@@ -346,23 +346,59 @@
       document.getElementById("imageSearchHelper").classList.remove("hidden");
       
       const gallery = document.getElementById("imageGallery");
-      
-      // Gera miniaturas directas do Unsplash Source baseadas na palavra exata digitada
-      const term = encodeURIComponent(local);
-      const photoUrls = [
-        `https://source.unsplash.com/featured/600x400/?${term},view`,
-        `https://source.unsplash.com/featured/600x400/?${term},nature`,
-        `https://source.unsplash.com/featured/600x400/?${term},place`
-      ];
+      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando fotos de ${local}...</div>`;
 
-      gallery.innerHTML = photoUrls.map((url, index) => `
-        <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-200 h-20" onclick="selectImage('${url}')">
-          <img src="${url}" class="h-full w-full object-cover" onerror="this.parentElement.remove()">
-        </div>
-      `).join('');
+      try {
+        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gteisearch=${encodeURIComponent(local)}&gsrsearch=${encodeURIComponent(local)}&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
+        
+        const res = await fetch(wikiUrl);
+        const data = await res.json();
+        
+        let photoUrls = [];
 
-      // Seleciona a primeira foto por padrão
-      selectImage(photoUrls[0]);
+        if (data.query && data.query.pages) {
+          Object.values(data.query.pages).forEach(page => {
+            if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url) {
+              const imgUrl = page.imageinfo[0].url;
+              if (imgUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+                photoUrls.push(imgUrl);
+              }
+            }
+          });
+        }
+
+        if (photoUrls.length === 0) {
+          const cleanTerm = encodeURIComponent(local.split(" ")[0]);
+          photoUrls = [
+            `https://loremflickr.com/600/400/${cleanTerm}?lock=1`,
+            `https://loremflickr.com/600/400/${cleanTerm}?lock=2`,
+            `https://loremflickr.com/600/400/${cleanTerm}?lock=3`
+          ];
+        }
+
+        gallery.innerHTML = photoUrls.map((url) => `
+          <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 h-20" onclick="selectImage('${url}')">
+            <img src="${url}" class="h-full w-full object-cover hover:scale-105 transition" onerror="this.parentElement.remove()">
+          </div>
+        `).join('');
+
+        if (photoUrls.length > 0) {
+          selectImage(photoUrls[0]);
+        }
+
+      } catch (err) {
+        console.error("Erro na busca de imagem:", err);
+        const cleanTerm = encodeURIComponent(local.split(" ")[0]);
+        const fallbackUrl = `https://loremflickr.com/600/400/${cleanTerm}`;
+        gallery.innerHTML = `
+          <div class="col-span-3">
+            <div class="relative cursor-pointer overflow-hidden rounded-lg border border-slate-200 h-20" onclick="selectImage('${fallbackUrl}')">
+              <img src="${fallbackUrl}" class="h-full w-full object-cover">
+            </div>
+          </div>
+        `;
+        selectImage(fallbackUrl);
+      }
     }
 
     // Pesquisa limpa no Google Imagens sem anexar o destino da viagem
