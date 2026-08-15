@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Flatpickr (Calendário e Relógio amigáveis) -->
+  <!-- Flatpickr (Calendário e Relógio) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_purple.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -84,9 +84,9 @@
 
   <!-- Modal Admin -->
   <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-6 relative border border-slate-100">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 relative border border-slate-100">
       
-      <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+      <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10">
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
 
@@ -127,9 +127,9 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora (Seletor Interativo)</label>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora</label>
               <div class="relative">
-                <input type="text" id="wpDataHora" required placeholder="Selecione data e hora" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                <input type="text" id="wpDataHora" required placeholder="Selecione data e hora" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white cursor-pointer">
                 <i class="fa-regular fa-calendar-check absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
               </div>
             </div>
@@ -144,9 +144,9 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Galeria de Imagens Específicas do Local -->
+          <!-- Galeria de Imagens Selecionáveis -->
           <div id="imageGalleryBox" class="hidden">
-            <label class="block text-xs font-bold text-slate-600 mb-1">Imagens Encontradas do Local:</label>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Escolha uma Imagem do Local:</label>
             <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto p-1.5 bg-slate-50 rounded-xl border border-slate-200"></div>
           </div>
 
@@ -155,12 +155,12 @@
             <input type="url" id="wpImagemUrl" placeholder="https://..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Mapa Embutido no App (Rota do Waypoint Anterior -> Atual) -->
+          <!-- Mapa Expandido Integrado -->
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Prévia da Rota no Mapa Integrado</label>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Prévia Expandida da Rota no Mapa</label>
             <input type="hidden" id="wpMapaUrl">
-            <div id="mapEmbedContainer" class="w-full h-48 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative">
-              <span class="text-xs text-slate-400">Clique em "Auto Gerar" após digitar o local para exibir o mapa.</span>
+            <div id="mapEmbedContainer" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative shadow-inner">
+              <span class="text-xs text-slate-400">Clique em "Auto Gerar" após digitar o local para exibir o mapa amplo.</span>
             </div>
           </div>
 
@@ -193,8 +193,12 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       loadWaypoints();
+      initFlatpickr();
+    });
+
+    function initFlatpickr() {
+      if (fpInstance) fpInstance.destroy();
       
-      // Inicialização do Flatpickr (Calendário e Relógio intuitivo)
       fpInstance = flatpickr("#wpDataHora", {
         enableTime: true,
         dateFormat: "Y-m-d H:i",
@@ -202,12 +206,13 @@
         altFormat: "d/m/Y às H:i",
         locale: "pt",
         time_24hr: true,
+        minuteIncrement: 5,
         onChange: function() {
           checkDistancePreview();
           updateEmbeddedMap();
         }
       });
-    });
+    }
 
     function onTripChange() {
       loadWaypoints();
@@ -317,7 +322,7 @@
       }).join('');
     }
 
-    // Busca de Fotos Focadas no Local Exato + Atualização de Mapa Embutido
+    // Busca de Fotos Diretas do Local Pesquisado
     async function autoSuggest() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
@@ -325,40 +330,57 @@
       const tripSelect = document.getElementById("tripSelect");
       const trip = tripSelect.options[tripSelect.selectedIndex].text;
 
-      // 1. Atualizar Mapa Integrado
+      // 1. Atualizar Mapa Integrado Ampliado
       updateEmbeddedMap();
 
-      // 2. Buscar fotos diretamente no Unsplash e Flickr/Wikimedia ajustado
+      // 2. Busca de Imagens no Wikimedia Commons filtradas pelo local exato
       const gallery = document.getElementById("imageGallery");
       const galleryBox = document.getElementById("imageGalleryBox");
       
       galleryBox.classList.remove("hidden");
-      gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Buscando fotos exatas de ${local}...</div>`;
+      gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Buscando fotos de ${local}...</div>`;
 
       try {
-        const query = encodeURIComponent(`${local} ${trip}`);
+        const searchTerm = encodeURIComponent(`${local} ${trip}`);
+        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${searchTerm}&gsrnamespace=6&gsrlimit=9&prop=imageinfo&iiprop=url&format=json&origin=*`;
         
-        // Gera URLs de imagens dinâmicas e de alta precisão via Unsplash Source com termos exatos
-        const images = [
-          `https://source.unsplash.com/600x400/?${encodeURIComponent(local)}`,
-          `https://source.unsplash.com/600x400/?${encodeURIComponent(local + " " + trip)}`,
-          `https://source.unsplash.com/600x400/?travel,${encodeURIComponent(local)}`
-        ];
+        const res = await fetch(wikiUrl);
+        const data = await res.json();
 
-        gallery.innerHTML = images.map((url, idx) => `
+        let photos = [];
+
+        if (data.query && data.query.pages) {
+          Object.values(data.query.pages).forEach(page => {
+            if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url) {
+              const url = page.imageinfo[0].url;
+              if (url.match(/\.(jpeg|jpg|png|webp)$/i)) {
+                photos.push(url);
+              }
+            }
+          });
+        }
+
+        // Fallback dinâmico com busca direta do local
+        if (photos.length === 0) {
+          const fallbackTerm = encodeURIComponent(local);
+          photos = [
+            `https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&q=80`,
+            `https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&q=80`
+          ];
+        }
+
+        gallery.innerHTML = photos.map(url => `
           <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200" onclick="selectImage('${url}')">
-            <img src="${url}" class="h-20 w-full object-cover group-hover:scale-105 transition duration-200" onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=500&q=80'">
-            <span class="absolute inset-0 bg-brand-900/20 group-hover:bg-transparent transition"></span>
+            <img src="${url}" class="h-20 w-full object-cover group-hover:scale-105 transition duration-200" onerror="this.parentElement.remove()">
           </div>
         `).join('');
 
-        // Seleciona automaticamente a primeira por padrão se o campo estiver vazio
-        if (!document.getElementById("wpImagemUrl").value) {
-          selectImage(images[0]);
+        if (photos.length > 0 && !document.getElementById("wpImagemUrl").value) {
+          selectImage(photos[0]);
         }
 
       } catch (err) {
-        gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2">Cole a URL da foto manualmente abaixo.</div>`;
+        gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2">Insira o link da foto desejada no campo abaixo.</div>`;
       }
     }
 
@@ -366,7 +388,7 @@
       document.getElementById("wpImagemUrl").value = url;
     }
 
-    // Atualiza o iframe do Google Maps para exibir o trajeto sem sair do aplicativo
+    // Exibe mapa embutido com altura maior e visão ampla regional
     function updateEmbeddedMap() {
       const localAtual = document.getElementById("wpAtividade").value.trim();
       if (!localAtual) return;
@@ -376,27 +398,24 @@
       
       const selectedTime = new Date(document.getElementById("wpDataHora").value);
 
-      // Identifica o Waypoint anterior
       const previousWp = waypointsData
         .filter(w => new Date(w.data_hora) < selectedTime)
         .pop();
 
       let mapSearchQuery = "";
       if (previousWp && previousWp.atividade_local) {
-        // Exibe rota do Ponto Anterior -> Ponto Novo
         mapSearchQuery = `from ${previousWp.atividade_local} ${trip} to ${localAtual} ${trip}`;
       } else {
-        // Apenas o Ponto Novo se for o primeiro
         mapSearchQuery = `${localAtual} ${trip}`;
       }
 
       const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
       document.getElementById("wpMapaUrl").value = mapUrl;
 
-      // Renderiza iframe embutido
-      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+      // Renderiza iframe ampliado (zoom z=11 para enxergar toda a região)
+      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&t=&z=11&ie=UTF8&iwloc=&output=embed`;
       document.getElementById("mapEmbedContainer").innerHTML = `
-        <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${embedUrl}"></iframe>
+        <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${embedUrl}" class="rounded-2xl"></iframe>
       `;
     }
 
@@ -448,7 +467,7 @@
           document.getElementById("waypointForm").reset();
           document.getElementById("wpId").value = "";
           document.getElementById("imageGalleryBox").classList.add("hidden");
-          document.getElementById("mapEmbedContainer").innerHTML = `<span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar o mapa.</span>`;
+          document.getElementById("mapEmbedContainer").innerHTML = `<span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar o mapa amplo.</span>`;
           closeAdminModal();
           loadWaypoints();
         } else {
@@ -469,9 +488,16 @@
       document.getElementById("wpId").value = item.id;
       document.getElementById("wpAtividade").value = item.atividade_local;
       
-      if (fpInstance) {
-        fpInstance.setDate(item.data_hora);
-      }
+      openAdminModal();
+      document.getElementById("pinStep").classList.add("hidden");
+      document.getElementById("formStep").classList.remove("hidden");
+
+      setTimeout(() => {
+        initFlatpickr();
+        if (fpInstance && item.data_hora) {
+          fpInstance.setDate(item.data_hora);
+        }
+      }, 100);
 
       document.getElementById("wpValorEstimado").value = item.valor_estimado;
       document.getElementById("wpValorPago").value = item.valor_pago;
@@ -481,10 +507,6 @@
       document.getElementById("wpObservacoes").value = item.observacoes;
 
       document.getElementById("modalFormTitle").innerText = "Editar Ponto";
-      openAdminModal();
-      document.getElementById("pinStep").classList.add("hidden");
-      document.getElementById("formStep").classList.remove("hidden");
-      
       updateEmbeddedMap();
     }
 
@@ -540,6 +562,7 @@
         document.getElementById("adminStatusText").innerText = "Admin Ativo";
         document.getElementById("pinStep").classList.add("hidden");
         document.getElementById("formStep").classList.remove("hidden");
+        initFlatpickr();
         renderWaypoints(waypointsData);
       } else {
         alert("PIN incorreto!");
