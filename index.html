@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Flatpickr (Calendário e Relógio Customizados) -->
+  <!-- Flatpickr (Calendário e Relógio) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_purple.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -124,9 +124,9 @@
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Nome do Local / Atividade</label>
             <div class="flex gap-2">
-              <input type="text" id="wpAtividade" required placeholder="Ex: Pico Agudo" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
-              <button type="button" onclick="autoSuggest()" class="bg-brand-700 hover:bg-brand-800 text-amber-400 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1 transition shadow-sm whitespace-nowrap">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Gerar
+              <input type="text" id="wpAtividade" required placeholder="Ex: Pico Agudo" oninput="updateEmbeddedMap()" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+              <button type="button" onclick="searchGoogleImages()" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-extrabold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm whitespace-nowrap">
+                <i class="fa-brands fa-google"></i> Buscar Foto
               </button>
             </div>
           </div>
@@ -150,22 +150,17 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Fotos Sugeridas -->
-          <div id="imageSearchHelper" class="hidden bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
-            <div class="flex justify-between items-center">
-              <label class="block text-xs font-bold text-slate-700">Fotos Sugeridas:</label>
-              <button type="button" onclick="searchGoogleImages()" class="text-xs bg-amber-400 hover:bg-amber-500 text-slate-900 font-extrabold px-3 py-1 rounded-lg transition shadow-sm flex items-center gap-1">
-                <i class="fa-brands fa-google"></i> Abrir Fotos no Google
-              </button>
-            </div>
-            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto pt-1"></div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">URL da Imagem Selecionada</label>
-            <input type="url" id="wpImagemUrl" oninput="previewImageURL()" placeholder="https://..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+          <!-- Campo para Colar a URL da Foto -->
+          <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+            <label class="block text-xs font-bold text-slate-700">
+              <i class="fa-solid fa-link text-brand-600 mr-1"></i> Cole o Link da Imagem Aqui:
+            </label>
+            <input type="url" id="wpImagemUrl" oninput="previewImageURL()" placeholder="Cole aqui a URL da imagem (http...)" class="w-full border border-slate-200 bg-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+            
             <div id="imagePreviewBox" class="mt-2 hidden">
-              <img id="imgPreview" src="" class="h-36 w-full object-cover rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-400 block mb-1">Prévia da imagem:</span>
+              <img id="imgPreview" src="" class="h-40 w-full object-cover rounded-xl border border-slate-200 shadow-sm" onerror="handleImageError()">
+              <p id="imgErrorMsg" class="text-[11px] text-red-500 font-semibold hidden mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>Link de imagem inválido ou não suportado.</p>
             </div>
           </div>
 
@@ -173,8 +168,8 @@
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Prévia Expandida da Rota no Mapa</label>
             <input type="hidden" id="wpMapaUrl">
-            <div id="mapEmbedContainer" class="w-full h-64 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative shadow-inner">
-              <span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar a rota no mapa.</span>
+            <div id="mapEmbedContainer" class="w-full h-52 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative shadow-inner">
+              <span class="text-xs text-slate-400">Digite o local para carregar o mapa.</span>
             </div>
           </div>
 
@@ -353,89 +348,19 @@
       document.getElementById("totalRestante").innerText = `R$ ${restante.toFixed(2)}`;
     }
 
-    async function autoSuggest() {
-      const local = document.getElementById("wpAtividade").value.trim();
-      if (!local) return alert("Digite o nome do local primeiro.");
-
-      updateEmbeddedMap();
-      document.getElementById("imageSearchHelper").classList.remove("hidden");
-      
-      const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando imagens de "${local}"...</div>`;
-
-      let photoUrls = [];
-
-      try {
-        // 1. Flickr Search API Publica (Direta e sem restrições de CORS)
-        const flickrUrl = `https://www.flickr.com/services/feeds/photos_public.gne?tags=${encodeURIComponent(local)}&format=json&nojsoncallback=1`;
-        const resFlickr = await fetch(flickrUrl);
-        const dataFlickr = await resFlickr.json();
-
-        if (dataFlickr.items && dataFlickr.items.length > 0) {
-          photoUrls = dataFlickr.items.slice(0, 6).map(item => item.media.m.replace('_m.', '_b.'));
-        }
-      } catch (err) {
-        console.warn("Flickr indisponível, ativando alternativas...", err);
-      }
-
-      // 2. Wikipedia API (Para pontos turísticos reconhecidos)
-      if (photoUrls.length < 2) {
-        try {
-          const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&titles=${encodeURIComponent(local)}&pithumbsize=800`;
-          const resWiki = await fetch(wikiUrl);
-          const dataWiki = await resWiki.json();
-
-          if (dataWiki.query && dataWiki.query.pages) {
-            Object.values(dataWiki.query.pages).forEach(page => {
-              if (page.thumbnail && page.thumbnail.source) {
-                photoUrls.unshift(page.thumbnail.source);
-              }
-            });
-          }
-        } catch (e) {
-          console.error("Erro Wikipedia:", e);
-        }
-      }
-
-      // 3. Unsplash Dinâmico (Garante que nunca fique sem foto)
-      if (photoUrls.length === 0) {
-        const cleanSearch = local.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9 ]/g, "");
-        photoUrls.push(`https://source.unsplash.com/800x600/?${encodeURIComponent(cleanSearch)},travel`);
-      }
-
-      // Exibição na galeria
-      if (photoUrls.length > 0) {
-        gallery.innerHTML = photoUrls.map((url) => `
-          <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 h-20" onclick="selectImage('${url}')">
-            <img src="${url}" class="h-full w-full object-cover hover:scale-105 transition" onerror="this.parentElement.remove()">
-          </div>
-        `).join('');
-
-        selectImage(photoUrls[0]);
-      } else {
-        gallery.innerHTML = `
-          <div class="col-span-3 text-center py-2 text-xs text-slate-500">
-            Nenhuma imagem encontrada. Use o botão <b>"Abrir Fotos no Google"</b>.
-          </div>
-        `;
-      }
-    }
-
     function searchGoogleImages() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
       window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(local)}`, '_blank');
     }
 
-    function selectImage(url) {
-      document.getElementById("wpImagemUrl").value = url;
-      previewImageURL();
-    }
-
     function previewImageURL() {
-      const url = document.getElementById("wpImagemUrl").value;
+      const url = document.getElementById("wpImagemUrl").value.trim();
       const previewBox = document.getElementById("imagePreviewBox");
       const img = document.getElementById("imgPreview");
+      const errorMsg = document.getElementById("imgErrorMsg");
+
+      errorMsg.classList.add("hidden");
 
       if (url && url.startsWith("http")) {
         img.src = url;
@@ -443,6 +368,10 @@
       } else {
         previewBox.classList.add("hidden");
       }
+    }
+
+    function handleImageError() {
+      document.getElementById("imgErrorMsg").classList.remove("hidden");
     }
 
     function updateEmbeddedMap() {
@@ -523,9 +452,8 @@
         if (result.success || result.status === "success") {
           document.getElementById("waypointForm").reset();
           document.getElementById("wpId").value = "";
-          document.getElementById("imageSearchHelper").classList.add("hidden");
           document.getElementById("imagePreviewBox").classList.add("hidden");
-          document.getElementById("mapEmbedContainer").innerHTML = `<span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar o mapa.</span>`;
+          document.getElementById("mapEmbedContainer").innerHTML = `<span class="text-xs text-slate-400">Digite o local para carregar o mapa.</span>`;
           closeAdminModal();
           loadWaypoints();
         } else {
