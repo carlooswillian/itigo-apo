@@ -61,7 +61,7 @@
         </select>
       </div>
 
-      <!-- Card do Balanço Financero Inteligente -->
+      <!-- Card do Balanço Financeiro Inteligente -->
       <div id="financialSummary" class="w-full md:w-auto flex flex-wrap gap-3 text-xs sm:text-sm font-semibold bg-brand-50 p-3 rounded-xl border border-brand-100">
         <div>Total: <span id="totalEstimado" class="text-brand-700 font-bold">R$ 0,00</span></div>
         <div class="text-slate-300">|</div>
@@ -113,7 +113,7 @@
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Nome do Local / Atividade</label>
             <div class="flex gap-2">
-              <input type="text" id="wpAtividade" required placeholder="Ex: Passeio de Barco" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+              <input type="text" id="wpAtividade" required placeholder="Ex: Vinícola Essenza" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
               <button type="button" onclick="autoSuggest()" class="bg-brand-700 hover:bg-brand-800 text-amber-400 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1 transition shadow-sm">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Auto
               </button>
@@ -136,10 +136,10 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Galeria de Imagens Selecionáveis -->
+          <!-- Galeria de Imagens Selecionáveis Dinâmica -->
           <div id="imageGalleryBox" class="hidden">
             <label class="block text-xs font-bold text-slate-600 mb-1">Escolha uma Imagem Sugerida:</label>
-            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-28 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200"></div>
+            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200"></div>
           </div>
 
           <div>
@@ -207,7 +207,6 @@
       }
     }
 
-    // Renderização dos cards com funcionalidade de pagamento rápido
     function renderWaypoints(items) {
       const container = document.getElementById("waypointsList");
       if (!items || items.length === 0) {
@@ -215,14 +214,13 @@
         return;
       }
 
-      container.innerHTML = items.map((wp, index) => {
+      container.innerHTML = items.map((wp) => {
         const dataFormatada = wp.data_hora ? new Date(wp.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'A definir';
         
         const est = parseFloat(wp.valor_estimado || 0);
         const pago = parseFloat(wp.valor_pago || 0);
         const restante = est - pago;
 
-        // Status visual do pagamento
         let statusBadge = '';
         if (pago >= est && est > 0) {
           statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md"><i class="fa-solid fa-check"></i> Pago</span>`;
@@ -251,7 +249,6 @@
                 ${wp.observacoes ? `<p class="text-xs text-slate-500 mt-1">${wp.observacoes}</p>` : ''}
               </div>
 
-              <!-- Rodapé do Card -->
               <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
                 
                 <div class="flex flex-wrap justify-between items-center text-xs gap-2">
@@ -282,7 +279,6 @@
                   </div>
                 </div>
 
-                <!-- PAGAMENTO RÁPIDO NA ABA PRINCIPAL (Só se o PIN estiver liberado) -->
                 ${currentPin ? `
                   <div class="mt-2 bg-slate-50 p-2 rounded-xl border border-slate-200 flex items-center gap-2">
                     <span class="text-[11px] font-bold text-slate-500">Lançar Pago:</span>
@@ -300,7 +296,6 @@
       }).join('');
     }
 
-    // Ação de Salvar Pagamento Rápido sem Modal
     async function saveQuickPay(id) {
       const valor = document.getElementById(`quickPay_${id}`).value;
       if (valor === "") return;
@@ -338,7 +333,6 @@
       document.getElementById("totalRestante").innerText = `R$ ${(est - pag).toFixed(2)}`;
     }
 
-    // Modal & PIN
     function openAdminModal() {
       document.getElementById("adminModal").classList.remove("hidden");
     }
@@ -360,61 +354,86 @@
       }
     }
 
-    // Sugestão Automática de Imagens e Mapa
-    function autoSuggest() {
+    // Busca de Imagens Reais Dinâmicas e Configuração de Mapa
+    async function autoSuggest() {
       const local = document.getElementById("wpAtividade").value;
       if (!local) return alert("Digite o nome do local primeiro.");
 
-      // Link do Mapa
-      const trip = document.getElementById("tripSelect").options[document.getElementById("tripSelect").selectedIndex].text;
+      // 1. Prepara o Link do Mapa
+      const tripSelect = document.getElementById("tripSelect");
+      const trip = tripSelect.options[tripSelect.selectedIndex].text;
       const mapsQuery = encodeURIComponent(`${local} ${trip}`);
       const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+      
       document.getElementById("wpMapaUrl").value = mapUrl;
-
       document.getElementById("mapPreviewLink").href = mapUrl;
       document.getElementById("mapPreview").classList.remove("hidden");
 
-      // Galeria de Fotos Variadas baseadas no termo
-      const samplePhotos = [
-        `https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&q=80`,
-        `https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=500&q=80`,
-        `https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=500&q=80`,
-        `https://images.unsplash.com/photo-1476514525535-ce74f45814d9?w=500&q=80`,
-        `https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=500&q=80`
-      ];
-
+      // 2. Busca Dinâmica no Wikimedia Commons por Termo
       const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = samplePhotos.map(url => `
-        <img src="${url}" onclick="selectImage('${url}')" class="h-16 w-full object-cover rounded-lg cursor-pointer hover:opacity-80 border-2 border-transparent hover:border-brand-500 transition">
-      `).join('');
-
+      gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Buscando fotos de ${local}...</div>`;
       document.getElementById("imageGalleryBox").classList.remove("hidden");
+
+      try {
+        const searchTerm = encodeURIComponent(local);
+        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${searchTerm}&gsrnamespace=6&meta=siteinfo&gsrlimit=8&prop=imageinfo&iiprop=url&format=json&origin=*`;
+        
+        const res = await fetch(wikiUrl);
+        const data = await res.json();
+
+        let photos = [];
+
+        if (data.query && data.query.pages) {
+          Object.values(data.query.pages).forEach(page => {
+            if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url) {
+              const url = page.imageinfo[0].url;
+              if (url.match(/\.(jpeg|jpg|png|webp)$/i)) {
+                photos.push(url);
+              }
+            }
+          });
+        }
+
+        // Se não encontrar fotos exatas no Wikimedia, cria sugestões focadas no termo pesquisado
+        if (photos.length === 0) {
+          photos = [
+            `https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&q=80`,
+            `https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&q=80`,
+            `https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500&q=80`
+          ];
+        }
+
+        gallery.innerHTML = photos.map(url => `
+          <img src="${url}" onclick="selectImage('${url}')" class="h-16 w-full object-cover rounded-lg cursor-pointer hover:opacity-80 border-2 border-transparent hover:border-brand-500 transition" onerror="this.remove()">
+        `).join('');
+
+      } catch (err) {
+        console.error("Erro na busca de imagens:", err);
+        gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2">Cole o URL da foto desejada manualmente abaixo.</div>`;
+      }
     }
 
     function selectImage(url) {
       document.getElementById("wpImagemUrl").value = url;
     }
 
-    // Estimativa de Distância baseada no horário do ponto anterior
     function checkDistancePreview() {
       const selectedTime = new Date(document.getElementById("wpDataHora").value);
       if (isNaN(selectedTime)) return;
 
-      // Encontra o ponto imediatamente anterior
       const previous = waypointsData
         .filter(w => new Date(w.data_hora) < selectedTime)
         .pop();
 
       const badge = document.getElementById("distanciaInfo");
       if (previous) {
-        badge.innerText = `Ponto Anterior: ${previous.atividade_local}`;
+        badge.innerText = `Anterior: ${previous.atividade_local}`;
         badge.classList.remove("hidden");
       } else {
         badge.classList.add("hidden");
       }
     }
 
-    // Salvar Ponto Completo
     async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById("btnSave");
