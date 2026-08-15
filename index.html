@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Flatpickr (Calendário e Relógio Customizados) -->
+  <!-- Flatpickr (Calendário e Relógio) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_purple.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -33,7 +33,7 @@
               600: '#7c3aed',
               700: '#6d28d9',
               800: '#5b21b6',
-              yellow: '#f59e0b'
+              900: '#4c1d95'
             }
           }
         }
@@ -102,16 +102,16 @@
           <i class="fa-solid fa-key text-2xl text-brand-600"></i>
         </div>
         <h3 class="text-lg font-bold text-slate-800 mb-1">Painel do Organizador</h3>
-        <p class="text-xs text-slate-500 mb-4">Insira sua senha para edições</p>
+        <p class="text-xs text-slate-500 mb-4">Insira a senha de 4 dígitos para gerenciar</p>
         
-        <input type="password" id="pinInput" placeholder="PIN" maxlength="4" class="text-center tracking-widest text-2xl font-bold border border-slate-300 rounded-xl p-2 w-32 mb-4 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        <input type="password" id="pinInput" placeholder="PIN" maxlength="4" class="text-center tracking-widest text-2xl font-bold border border-slate-300 rounded-xl p-2 w-36 mb-4 focus:outline-none focus:ring-2 focus:ring-brand-500">
         
         <div>
-          <button onclick="verifyPin()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded-xl transition w-32 shadow-md">Entrar</button>
+          <button onclick="verifyPin()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded-xl transition w-36 shadow-md">Entrar</button>
         </div>
       </div>
 
-      <!-- Formulário -->
+      <!-- Formulário de Inserção/Edição -->
       <div id="formStep" class="hidden">
         <div class="flex justify-between items-center mb-4">
           <h3 id="modalFormTitle" class="text-lg font-extrabold text-brand-800">Adicionar Novo Ponto</h3>
@@ -150,7 +150,7 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Fotos do Local -->
+          <!-- Fotos Sugeridas -->
           <div id="imageSearchHelper" class="hidden bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
             <div class="flex justify-between items-center">
               <label class="block text-xs font-bold text-slate-700">Fotos Sugeridas:</label>
@@ -163,29 +163,29 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">URL da Imagem Selecionada</label>
-            <input type="url" id="wpImagemUrl" oninput="previewImageURL()" placeholder="Cole o link da imagem aqui (https://...)" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+            <input type="url" id="wpImagemUrl" oninput="previewImageURL()" placeholder="https://..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
             <div id="imagePreviewBox" class="mt-2 hidden">
               <img id="imgPreview" src="" class="h-36 w-full object-cover rounded-xl border border-slate-200 shadow-sm">
             </div>
           </div>
 
-          <!-- Mapa Expandido Integrado -->
+          <!-- Mapa Embed -->
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Prévia Expandida da Rota no Mapa</label>
             <input type="hidden" id="wpMapaUrl">
-            <div id="mapEmbedContainer" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative shadow-inner">
+            <div id="mapEmbedContainer" class="w-full h-64 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative shadow-inner">
               <span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar a rota no mapa.</span>
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Link de Referência (Instagram / TikTok / YouTube)</label>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Link de Referência (Instagram / TikTok)</label>
             <input type="url" id="wpSocialUrl" placeholder="https://instagram.com/p/..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Observações</label>
-            <textarea id="wpObservacoes" rows="2" placeholder="Notas, senhas de reserva, etc." class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+            <textarea id="wpObservacoes" rows="2" placeholder="Notas, detalhes da reserva, etc." class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
@@ -209,7 +209,6 @@
       loadWaypoints();
     });
 
-    // Força o Flatpickr Customizado mesmo no Android/iOS
     function initFlatpickr() {
       if (fpInstance) fpInstance.destroy();
       
@@ -240,20 +239,21 @@
 
       try {
         const response = await fetch(`${API_URL}?action=getWaypoints&trip_id=${tripId}`);
-        waypointsData = await response.json();
+        const data = await response.json();
+        waypointsData = Array.isArray(data) ? data : (data.waypoints || []);
         
         renderWaypoints(waypointsData);
         calculateFinancials(waypointsData);
       } catch (err) {
-        console.error("Erro:", err);
-        container.innerHTML = `<div class="text-center py-8 text-red-500 font-semibold">Erro ao carregar roteiro. Verifique a conexão.</div>`;
+        console.error("Erro ao carregar dados:", err);
+        container.innerHTML = `<div class="text-center py-8 text-red-500 font-semibold">Erro ao carregar banco de dados. Verifique o Google Apps Script.</div>`;
       }
     }
 
     function renderWaypoints(items) {
       const container = document.getElementById("waypointsList");
       if (!items || items.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 font-medium">Nenhum ponto neste roteiro ainda.</div>`;
+        container.innerHTML = `<div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 font-medium">Nenhum ponto cadastrado para este roteiro.</div>`;
         return;
       }
 
@@ -268,7 +268,7 @@
         if (pago >= est && est > 0) {
           statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md"><i class="fa-solid fa-check"></i> Pago</span>`;
         } else if (pago > 0 && pago < est) {
-          statusBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md"><i class="fa-solid fa-pie-chart"></i> Sinal Pago (Falta R$ ${restante.toFixed(2)})</span>`;
+          statusBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Sinal Pago (Falta R$ ${restante.toFixed(2)})</span>`;
         } else if (est > 0) {
           statusBadge = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md">Pendente</span>`;
         }
@@ -361,12 +361,11 @@
       document.getElementById("imageSearchHelper").classList.remove("hidden");
       
       const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando imagens reais de "${local}"...</div>`;
+      gallery.innerHTML = `<div class="col-span-3 text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Buscando imagens de "${local}"...</div>`;
 
       let photoUrls = [];
 
       try {
-        // 1. Busca precisa via DuckDuckGo Images (usando CorsProxy para evitar bloqueio CORS)
         const ddgUrl = `https://corsproxy.io/?${encodeURIComponent(`https://duckduckgo.com/i.js?q=${encodeURIComponent(local)}&o=json`)}`;
         const resDdg = await fetch(ddgUrl);
         const dataDdg = await resDdg.json();
@@ -375,10 +374,9 @@
           photoUrls = dataDdg.results.slice(0, 6).map(item => item.image);
         }
       } catch (err) {
-        console.warn("Falha na busca primária, tentando fallback da Wikimedia...", err);
+        console.warn("Falha na busca DuckDuckGo, tentando Wikimedia...", err);
       }
 
-      // 2. Fallback via Wikipedia (busca direta no Commons) se o DuckDuckGo falhar
       if (photoUrls.length === 0) {
         try {
           const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrlimit=4&prop=pageimages&pithumbsize=800`;
@@ -393,11 +391,10 @@
             });
           }
         } catch (e) {
-          console.error("Erro no fallback Wikimedia:", e);
+          console.error("Erro Wikimedia:", e);
         }
       }
 
-      // Exibição do resultado
       if (photoUrls.length > 0) {
         gallery.innerHTML = photoUrls.map((url) => `
           <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 h-20" onclick="selectImage('${url}')">
@@ -409,7 +406,7 @@
       } else {
         gallery.innerHTML = `
           <div class="col-span-3 text-center py-2 text-xs text-slate-500">
-            Nenhuma imagem automática encontrada. Clique em <b>"Abrir Fotos no Google"</b> para escolher manualmente.
+            Nenhuma imagem encontrada. Use o botão <b>"Abrir Fotos no Google"</b>.
           </div>
         `;
       }
@@ -418,9 +415,7 @@
     function searchGoogleImages() {
       const local = document.getElementById("wpAtividade").value.trim();
       if (!local) return alert("Digite o nome do local primeiro.");
-      
-      const query = encodeURIComponent(local);
-      window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
+      window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(local)}`, '_blank');
     }
 
     function selectImage(url) {
@@ -452,12 +447,7 @@
         .filter(w => new Date(w.data_hora) < selectedTime)
         .pop();
 
-      let mapSearchQuery = "";
-      if (previousWp && previousWp.atividade_local) {
-        mapSearchQuery = `from ${previousWp.atividade_local} to ${localAtual}`;
-      } else {
-        mapSearchQuery = localAtual;
-      }
+      let mapSearchQuery = previousWp && previousWp.atividade_local ? `from ${previousWp.atividade_local} to ${localAtual}` : localAtual;
 
       const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
       document.getElementById("wpMapaUrl").value = mapUrl;
@@ -494,28 +484,34 @@
       btn.innerText = "Salvando...";
       btn.disabled = true;
 
-      const payload = {
-        pin: currentPin,
-        action: "saveWaypoint",
-        waypoint: {
-          id: document.getElementById("wpId").value,
-          trip_id: document.getElementById("tripSelect").value,
-          atividade_local: document.getElementById("wpAtividade").value,
-          data_hora: document.getElementById("wpDataHora").value,
-          valor_estimado: document.getElementById("wpValorEstimado").value,
-          valor_pago: document.getElementById("wpValorPago").value,
-          mapa_url: document.getElementById("wpMapaUrl").value,
-          imagem_url: document.getElementById("wpImagemUrl").value,
-          social_url: document.getElementById("wpSocialUrl").value,
-          observacoes: document.getElementById("wpObservacoes").value
-        }
+      const waypointData = {
+        id: document.getElementById("wpId").value,
+        trip_id: document.getElementById("tripSelect").value,
+        atividade_local: document.getElementById("wpAtividade").value,
+        data_hora: document.getElementById("wpDataHora").value,
+        valor_estimado: document.getElementById("wpValorEstimado").value,
+        valor_pago: document.getElementById("wpValorPago").value,
+        mapa_url: document.getElementById("wpMapaUrl").value,
+        imagem_url: document.getElementById("wpImagemUrl").value,
+        social_url: document.getElementById("wpSocialUrl").value,
+        observacoes: document.getElementById("wpObservacoes").value
       };
 
+      const formData = new URLSearchParams();
+      formData.append("pin", currentPin);
+      formData.append("action", "saveWaypoint");
+      formData.append("waypoint", JSON.stringify(waypointData));
+
       try {
-        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData
+        });
+        
         const result = await res.json();
 
-        if (result.success) {
+        if (result.success || result.status === "success") {
           document.getElementById("waypointForm").reset();
           document.getElementById("wpId").value = "";
           document.getElementById("imageSearchHelper").classList.add("hidden");
@@ -524,11 +520,12 @@
           closeAdminModal();
           loadWaypoints();
         } else {
-          alert(result.message);
+          alert(result.message || "Erro ao salvar o ponto.");
         }
       } catch (err) {
-        alert("Erro de conexão ao salvar.");
-      } font-bold {
+        console.error(err);
+        alert("Erro de conexão ao salvar no Google Apps Script.");
+      } finally {
         btn.innerText = "Salvar Ponto";
         btn.disabled = false;
       }
@@ -538,23 +535,28 @@
       const valInput = document.getElementById(`quickPay_${id}`);
       const valor = valInput ? valInput.value : 0;
 
-      const payload = {
-        pin: currentPin,
-        action: "updateQuickPay",
-        id: id,
-        valor_pago: valor
-      };
+      const formData = new URLSearchParams();
+      formData.append("pin", currentPin);
+      formData.append("action", "updateQuickPay");
+      formData.append("id", id);
+      formData.append("valor_pago", valor);
 
       try {
-        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData
+        });
+        
         const result = await res.json();
 
-        if (result.success) {
+        if (result.success || result.status === "success") {
           loadWaypoints();
         } else {
-          alert(result.message);
+          alert(result.message || "Erro ao atualizar pagamento.");
         }
       } catch (err) {
+        console.error(err);
         alert("Erro ao atualizar pagamento rápido.");
       }
     }
@@ -564,7 +566,7 @@
       if (!item) return;
 
       document.getElementById("wpId").value = item.id;
-      document.getElementById("wpAtividade").value = item.atividade_local;
+      document.getElementById("wpAtividade").value = item.atividade_local || "";
       document.getElementById("wpValorEstimado").value = item.valor_estimado || "";
       document.getElementById("wpValorPago").value = item.valor_pago || "";
       document.getElementById("wpImagemUrl").value = item.imagem_url || "";
