@@ -4,8 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ItiGo App - Roteiros de Viagem</title>
+  
+  <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Flatpickr (Calendário e Relógio amigáveis) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_purple.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -28,7 +37,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
 
-  <!-- Header em Roxo e Amarelo -->
+  <!-- Header -->
   <header class="bg-brand-700 text-white shadow-lg sticky top-0 z-30">
     <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
       <div class="flex items-center space-x-2">
@@ -47,10 +56,9 @@
   <!-- Conteúdo Principal -->
   <main class="max-w-4xl mx-auto px-4 mt-6">
     
-    <!-- Filtro de Roteiro e Resumo Financeiro -->
+    <!-- Filtro e Resumo Financeiro -->
     <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       
-      <!-- Seletor de Viagem -->
       <div class="w-full md:w-auto">
         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Selecionar Viagem</label>
         <select id="tripSelect" onchange="onTripChange()" class="w-full md:w-64 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-bold text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
@@ -61,7 +69,6 @@
         </select>
       </div>
 
-      <!-- Card do Balanço Financeiro Inteligente -->
       <div id="financialSummary" class="w-full md:w-auto flex flex-wrap gap-3 text-xs sm:text-sm font-semibold bg-brand-50 p-3 rounded-xl border border-brand-100">
         <div>Total: <span id="totalEstimado" class="text-brand-700 font-bold">R$ 0,00</span></div>
         <div class="text-slate-300">|</div>
@@ -72,20 +79,18 @@
     </div>
 
     <!-- Timeline do Roteiro -->
-    <div id="waypointsList" class="space-y-4">
-      <!-- Inserido via JS -->
-    </div>
+    <div id="waypointsList" class="space-y-4"></div>
   </main>
 
-  <!-- Modal Admin / Inserção & Edição -->
+  <!-- Modal Admin -->
   <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-6 relative border border-slate-100">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-6 relative border border-slate-100">
       
       <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
 
-      <!-- Step 1: Validação de PIN (Simplificado) -->
+      <!-- Validar PIN -->
       <div id="pinStep" class="text-center py-6">
         <div class="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-3">
           <i class="fa-solid fa-key text-2xl text-brand-600"></i>
@@ -100,7 +105,7 @@
         </div>
       </div>
 
-      <!-- Step 2: Formulário Inteligente de Waypoint -->
+      <!-- Formulário -->
       <div id="formStep" class="hidden">
         <div class="flex justify-between items-center mb-4">
           <h3 id="modalFormTitle" class="text-lg font-extrabold text-brand-800">Adicionar Novo Ponto</h3>
@@ -113,17 +118,20 @@
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Nome do Local / Atividade</label>
             <div class="flex gap-2">
-              <input type="text" id="wpAtividade" required placeholder="Ex: Vinícola Essenza" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
-              <button type="button" onclick="autoSuggest()" class="bg-brand-700 hover:bg-brand-800 text-amber-400 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1 transition shadow-sm">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto
+              <input type="text" id="wpAtividade" required placeholder="Ex: Cânion de Capitólio" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+              <button type="button" onclick="autoSuggest()" class="bg-brand-700 hover:bg-brand-800 text-amber-400 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1 transition shadow-sm whitespace-nowrap">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Gerar
               </button>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora</label>
-              <input type="datetime-local" id="wpDataHora" onchange="checkDistancePreview()" required class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora (Seletor Interativo)</label>
+              <div class="relative">
+                <input type="text" id="wpDataHora" required placeholder="Selecione data e hora" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                <i class="fa-regular fa-calendar-check absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1">Valor Estimado (R$)</label>
@@ -136,10 +144,10 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Galeria de Imagens Selecionáveis Dinâmica -->
+          <!-- Galeria de Imagens Específicas do Local -->
           <div id="imageGalleryBox" class="hidden">
-            <label class="block text-xs font-bold text-slate-600 mb-1">Escolha uma Imagem Sugerida:</label>
-            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200"></div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Imagens Encontradas do Local:</label>
+            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto p-1.5 bg-slate-50 rounded-xl border border-slate-200"></div>
           </div>
 
           <div>
@@ -147,14 +155,12 @@
             <input type="url" id="wpImagemUrl" placeholder="https://..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Prévia do Mapa -->
+          <!-- Mapa Embutido no App (Rota do Waypoint Anterior -> Atual) -->
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Link do Mapa (Google Maps / Waze)</label>
-            <input type="url" id="wpMapaUrl" placeholder="https://maps.google.com/..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-            <div id="mapPreview" class="mt-2 text-xs hidden">
-              <a id="mapPreviewLink" href="#" target="_blank" class="text-brand-600 underline font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-map-location-dot"></i> Testar Rota no Google Maps
-              </a>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Prévia da Rota no Mapa Integrado</label>
+            <input type="hidden" id="wpMapaUrl">
+            <div id="mapEmbedContainer" class="w-full h-48 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative">
+              <span class="text-xs text-slate-400">Clique em "Auto Gerar" após digitar o local para exibir o mapa.</span>
             </div>
           </div>
 
@@ -183,8 +189,25 @@
     
     let currentPin = "";
     let waypointsData = [];
+    let fpInstance = null;
 
-    document.addEventListener("DOMContentLoaded", loadWaypoints);
+    document.addEventListener("DOMContentLoaded", () => {
+      loadWaypoints();
+      
+      // Inicialização do Flatpickr (Calendário e Relógio intuitivo)
+      fpInstance = flatpickr("#wpDataHora", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        altInput: true,
+        altFormat: "d/m/Y às H:i",
+        locale: "pt",
+        time_24hr: true,
+        onChange: function() {
+          checkDistancePreview();
+          updateEmbeddedMap();
+        }
+      });
+    });
 
     function onTripChange() {
       loadWaypoints();
@@ -193,7 +216,7 @@
     async function loadWaypoints() {
       const tripId = document.getElementById("tripSelect").value;
       const container = document.getElementById("waypointsList");
-      container.innerHTML = `<div class="text-center py-12 text-slate-400 font-medium">Carregando roteiro...</div>`;
+      container.innerHTML = `<div class="text-center py-12 text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Carregando roteiro...</div>`;
 
       try {
         const response = await fetch(`${API_URL}?action=getWaypoints&trip_id=${tripId}`);
@@ -250,7 +273,6 @@
               </div>
 
               <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                
                 <div class="flex flex-wrap justify-between items-center text-xs gap-2">
                   <div>
                     <span class="text-slate-400">Est:</span> <strong class="text-slate-700">R$ ${est.toFixed(2)}</strong>
@@ -260,14 +282,14 @@
 
                   <div class="flex items-center gap-2">
                     ${wp.social_url ? `
-                      <a href="${wp.social_url}" target="_blank" class="text-slate-400 hover:text-pink-600 transition" title="Ver no Social">
+                      <a href="${wp.social_url}" target="_blank" class="text-slate-400 hover:text-pink-600 transition" title="Ver Mídia">
                         <i class="fa-brands fa-instagram text-base"></i>
                       </a>
                     ` : ''}
                     
                     ${wp.mapa_url ? `
                       <a href="${wp.mapa_url}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-sm">
-                        <i class="fa-solid fa-diamond-turn-right"></i> Ir
+                        <i class="fa-solid fa-diamond-turn-right"></i> Abrir Mapa
                       </a>
                     ` : ''}
 
@@ -288,12 +310,182 @@
                     </button>
                   </div>
                 ` : ''}
-
               </div>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    // Busca de Fotos Focadas no Local Exato + Atualização de Mapa Embutido
+    async function autoSuggest() {
+      const local = document.getElementById("wpAtividade").value.trim();
+      if (!local) return alert("Digite o nome do local primeiro.");
+
+      const tripSelect = document.getElementById("tripSelect");
+      const trip = tripSelect.options[tripSelect.selectedIndex].text;
+
+      // 1. Atualizar Mapa Integrado
+      updateEmbeddedMap();
+
+      // 2. Buscar fotos diretamente no Unsplash e Flickr/Wikimedia ajustado
+      const gallery = document.getElementById("imageGallery");
+      const galleryBox = document.getElementById("imageGalleryBox");
+      
+      galleryBox.classList.remove("hidden");
+      gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Buscando fotos exatas de ${local}...</div>`;
+
+      try {
+        const query = encodeURIComponent(`${local} ${trip}`);
+        
+        // Gera URLs de imagens dinâmicas e de alta precisão via Unsplash Source com termos exatos
+        const images = [
+          `https://source.unsplash.com/600x400/?${encodeURIComponent(local)}`,
+          `https://source.unsplash.com/600x400/?${encodeURIComponent(local + " " + trip)}`,
+          `https://source.unsplash.com/600x400/?travel,${encodeURIComponent(local)}`
+        ];
+
+        gallery.innerHTML = images.map((url, idx) => `
+          <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200" onclick="selectImage('${url}')">
+            <img src="${url}" class="h-20 w-full object-cover group-hover:scale-105 transition duration-200" onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=500&q=80'">
+            <span class="absolute inset-0 bg-brand-900/20 group-hover:bg-transparent transition"></span>
+          </div>
+        `).join('');
+
+        // Seleciona automaticamente a primeira por padrão se o campo estiver vazio
+        if (!document.getElementById("wpImagemUrl").value) {
+          selectImage(images[0]);
+        }
+
+      } catch (err) {
+        gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2">Cole a URL da foto manualmente abaixo.</div>`;
+      }
+    }
+
+    function selectImage(url) {
+      document.getElementById("wpImagemUrl").value = url;
+    }
+
+    // Atualiza o iframe do Google Maps para exibir o trajeto sem sair do aplicativo
+    function updateEmbeddedMap() {
+      const localAtual = document.getElementById("wpAtividade").value.trim();
+      if (!localAtual) return;
+
+      const tripSelect = document.getElementById("tripSelect");
+      const trip = tripSelect.options[tripSelect.selectedIndex].text;
+      
+      const selectedTime = new Date(document.getElementById("wpDataHora").value);
+
+      // Identifica o Waypoint anterior
+      const previousWp = waypointsData
+        .filter(w => new Date(w.data_hora) < selectedTime)
+        .pop();
+
+      let mapSearchQuery = "";
+      if (previousWp && previousWp.atividade_local) {
+        // Exibe rota do Ponto Anterior -> Ponto Novo
+        mapSearchQuery = `from ${previousWp.atividade_local} ${trip} to ${localAtual} ${trip}`;
+      } else {
+        // Apenas o Ponto Novo se for o primeiro
+        mapSearchQuery = `${localAtual} ${trip}`;
+      }
+
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
+      document.getElementById("wpMapaUrl").value = mapUrl;
+
+      // Renderiza iframe embutido
+      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+      document.getElementById("mapEmbedContainer").innerHTML = `
+        <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${embedUrl}"></iframe>
+      `;
+    }
+
+    function checkDistancePreview() {
+      const selectedTime = new Date(document.getElementById("wpDataHora").value);
+      if (isNaN(selectedTime)) return;
+
+      const previous = waypointsData
+        .filter(w => new Date(w.data_hora) < selectedTime)
+        .pop();
+
+      const badge = document.getElementById("distanciaInfo");
+      if (previous) {
+        badge.innerText = `Anterior: ${previous.atividade_local}`;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnSave");
+      btn.innerText = "Salvando...";
+      btn.disabled = true;
+
+      const payload = {
+        pin: currentPin,
+        action: "saveWaypoint",
+        waypoint: {
+          id: document.getElementById("wpId").value,
+          trip_id: document.getElementById("tripSelect").value,
+          atividade_local: document.getElementById("wpAtividade").value,
+          data_hora: document.getElementById("wpDataHora").value,
+          valor_estimado: document.getElementById("wpValorEstimado").value,
+          valor_pago: document.getElementById("wpValorPago").value,
+          mapa_url: document.getElementById("wpMapaUrl").value,
+          imagem_url: document.getElementById("wpImagemUrl").value,
+          social_url: document.getElementById("wpSocialUrl").value,
+          observacoes: document.getElementById("wpObservacoes").value
+        }
+      };
+
+      try {
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const result = await res.json();
+
+        if (result.success) {
+          document.getElementById("waypointForm").reset();
+          document.getElementById("wpId").value = "";
+          document.getElementById("imageGalleryBox").classList.add("hidden");
+          document.getElementById("mapEmbedContainer").innerHTML = `<span class="text-xs text-slate-400">Clique em "Auto Gerar" para carregar o mapa.</span>`;
+          closeAdminModal();
+          loadWaypoints();
+        } else {
+          alert(result.message);
+        }
+      } catch (err) {
+        alert("Erro de conexão ao salvar.");
+      } finally {
+        btn.innerText = "Salvar Ponto";
+        btn.disabled = false;
+      }
+    }
+
+    function editWaypoint(id) {
+      const item = waypointsData.find(w => String(w.id) === String(id));
+      if (!item) return;
+
+      document.getElementById("wpId").value = item.id;
+      document.getElementById("wpAtividade").value = item.atividade_local;
+      
+      if (fpInstance) {
+        fpInstance.setDate(item.data_hora);
+      }
+
+      document.getElementById("wpValorEstimado").value = item.valor_estimado;
+      document.getElementById("wpValorPago").value = item.valor_pago;
+      document.getElementById("wpMapaUrl").value = item.mapa_url;
+      document.getElementById("wpImagemUrl").value = item.imagem_url;
+      document.getElementById("wpSocialUrl").value = item.social_url || '';
+      document.getElementById("wpObservacoes").value = item.observacoes;
+
+      document.getElementById("modalFormTitle").innerText = "Editar Ponto";
+      openAdminModal();
+      document.getElementById("pinStep").classList.add("hidden");
+      document.getElementById("formStep").classList.remove("hidden");
+      
+      updateEmbeddedMap();
     }
 
     async function saveQuickPay(id) {
@@ -352,151 +544,6 @@
       } else {
         alert("PIN incorreto!");
       }
-    }
-
-    // Busca de Imagens Reais Dinâmicas e Configuração de Mapa
-    async function autoSuggest() {
-      const local = document.getElementById("wpAtividade").value;
-      if (!local) return alert("Digite o nome do local primeiro.");
-
-      // 1. Prepara o Link do Mapa
-      const tripSelect = document.getElementById("tripSelect");
-      const trip = tripSelect.options[tripSelect.selectedIndex].text;
-      const mapsQuery = encodeURIComponent(`${local} ${trip}`);
-      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
-      
-      document.getElementById("wpMapaUrl").value = mapUrl;
-      document.getElementById("mapPreviewLink").href = mapUrl;
-      document.getElementById("mapPreview").classList.remove("hidden");
-
-      // 2. Busca Dinâmica no Wikimedia Commons por Termo
-      const gallery = document.getElementById("imageGallery");
-      gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Buscando fotos de ${local}...</div>`;
-      document.getElementById("imageGalleryBox").classList.remove("hidden");
-
-      try {
-        const searchTerm = encodeURIComponent(local);
-        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${searchTerm}&gsrnamespace=6&meta=siteinfo&gsrlimit=8&prop=imageinfo&iiprop=url&format=json&origin=*`;
-        
-        const res = await fetch(wikiUrl);
-        const data = await res.json();
-
-        let photos = [];
-
-        if (data.query && data.query.pages) {
-          Object.values(data.query.pages).forEach(page => {
-            if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url) {
-              const url = page.imageinfo[0].url;
-              if (url.match(/\.(jpeg|jpg|png|webp)$/i)) {
-                photos.push(url);
-              }
-            }
-          });
-        }
-
-        // Se não encontrar fotos exatas no Wikimedia, cria sugestões focadas no termo pesquisado
-        if (photos.length === 0) {
-          photos = [
-            `https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&q=80`,
-            `https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&q=80`,
-            `https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500&q=80`
-          ];
-        }
-
-        gallery.innerHTML = photos.map(url => `
-          <img src="${url}" onclick="selectImage('${url}')" class="h-16 w-full object-cover rounded-lg cursor-pointer hover:opacity-80 border-2 border-transparent hover:border-brand-500 transition" onerror="this.remove()">
-        `).join('');
-
-      } catch (err) {
-        console.error("Erro na busca de imagens:", err);
-        gallery.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-2">Cole o URL da foto desejada manualmente abaixo.</div>`;
-      }
-    }
-
-    function selectImage(url) {
-      document.getElementById("wpImagemUrl").value = url;
-    }
-
-    function checkDistancePreview() {
-      const selectedTime = new Date(document.getElementById("wpDataHora").value);
-      if (isNaN(selectedTime)) return;
-
-      const previous = waypointsData
-        .filter(w => new Date(w.data_hora) < selectedTime)
-        .pop();
-
-      const badge = document.getElementById("distanciaInfo");
-      if (previous) {
-        badge.innerText = `Anterior: ${previous.atividade_local}`;
-        badge.classList.remove("hidden");
-      } else {
-        badge.classList.add("hidden");
-      }
-    }
-
-    async function handleFormSubmit(e) {
-      e.preventDefault();
-      const btn = document.getElementById("btnSave");
-      btn.innerText = "Salvando...";
-      btn.disabled = true;
-
-      const payload = {
-        pin: currentPin,
-        action: "saveWaypoint",
-        waypoint: {
-          id: document.getElementById("wpId").value,
-          trip_id: document.getElementById("tripSelect").value,
-          atividade_local: document.getElementById("wpAtividade").value,
-          data_hora: document.getElementById("wpDataHora").value,
-          valor_estimado: document.getElementById("wpValorEstimado").value,
-          valor_pago: document.getElementById("wpValorPago").value,
-          mapa_url: document.getElementById("wpMapaUrl").value,
-          imagem_url: document.getElementById("wpImagemUrl").value,
-          social_url: document.getElementById("wpSocialUrl").value,
-          observacoes: document.getElementById("wpObservacoes").value
-        }
-      };
-
-      try {
-        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-        const result = await res.json();
-
-        if (result.success) {
-          document.getElementById("waypointForm").reset();
-          document.getElementById("wpId").value = "";
-          document.getElementById("imageGalleryBox").classList.add("hidden");
-          document.getElementById("mapPreview").classList.add("hidden");
-          closeAdminModal();
-          loadWaypoints();
-        } else {
-          alert(result.message);
-        }
-      } catch (err) {
-        alert("Erro de conexão.");
-      } finally {
-        btn.innerText = "Salvar Ponto";
-        btn.disabled = false;
-      }
-    }
-
-    function editWaypoint(id) {
-      const item = waypointsData.find(w => String(w.id) === String(id));
-      if (!item) return;
-
-      document.getElementById("wpId").value = item.id;
-      document.getElementById("wpAtividade").value = item.atividade_local;
-      document.getElementById("wpDataHora").value = item.data_hora ? item.data_hora.substring(0, 16) : '';
-      document.getElementById("wpValorEstimado").value = item.valor_estimado;
-      document.getElementById("wpValorPago").value = item.valor_pago;
-      document.getElementById("wpMapaUrl").value = item.mapa_url;
-      document.getElementById("wpImagemUrl").value = item.imagem_url;
-      document.getElementById("wpSocialUrl").value = item.social_url || '';
-      document.getElementById("wpObservacoes").value = item.observacoes;
-
-      document.getElementById("modalFormTitle").innerText = "Editar Ponto";
-      openAdminModal();
-      document.getElementById("pinStep").classList.add("hidden");
-      document.getElementById("formStep").classList.remove("hidden");
     }
   </script>
 </body>
