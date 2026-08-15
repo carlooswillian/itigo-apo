@@ -351,7 +351,6 @@
         async function loadInitialData() {
             showSpinner(true);
             try {
-                // Fetch trips
                 const res = await fetch(`${API_URL}?action=getTrips`);
                 const tripsData = await res.json();
                 appState.trips = tripsData;
@@ -359,7 +358,6 @@
                 renderTripSelector();
 
                 if (tripsData.length > 0) {
-                    // Default to first active trip or first trip
                     const activeTrip = tripsData.find(t => t.status === 'ativa') || tripsData[0];
                     appState.currentTripId = activeTrip.trip_id;
                     document.getElementById('tripSelect').value = activeTrip.trip_id;
@@ -383,7 +381,6 @@
                 const currentTrip = appState.trips.find(t => t.trip_id == tripId);
                 updateTripHeader(currentTrip);
 
-                // Fetch waypoints & checklist for this trip
                 const [wpRes, chkRes] = await Promise.all([
                     fetch(`${API_URL}?action=getWaypoints&trip_id=${tripId}`),
                     fetch(`${API_URL}?action=getChecklist&trip_id=${tripId}`)
@@ -399,7 +396,7 @@
 
             } catch (err) {
                 console.error("Erro ao carregar detalhes da viagem:", err);
-            } flex {
+            } finally {
                 showSpinner(false);
             }
         }
@@ -461,7 +458,6 @@
                 return;
             }
 
-            // Sort waypoints by data_hora
             const sorted = [...appState.waypoints].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
 
             sorted.forEach(wp => {
@@ -489,7 +485,6 @@
                             
                             ${wp.observacoes ? `<p class="text-slate-600 text-sm mb-4 bg-slate-50 p-2.5 rounded-lg border border-slate-100">${wp.observacoes}</p>` : ''}
 
-                            <!-- Dynamic External Links -->
                             <div class="flex flex-wrap gap-2 mb-4">
                                 ${wp.mapa_url ? `<a href="${wp.mapa_url}" target="_blank" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"><i class="fa-solid fa-map-location-dot text-rose-500"></i> Ver Mapa</a>` : ''}
                                 ${wp.social_url ? `<a href="${wp.social_url}" target="_blank" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"><i class="fa-solid fa-link text-blue-500"></i> Link / Ingresso</a>` : ''}
@@ -497,14 +492,13 @@
                         </div>
                     </div>
 
-                    <!-- Payment Quick Input Section (Public View allowed) -->
                     <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
                         <div>
                             <span class="text-xs text-slate-400 block font-medium">Estimado: ${formatCurrency(wp.valor_estimado)}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <input type="number" step="0.01" id="paid_input_${wp.id}" value="${wp.valor_pago || ''}" placeholder="Valor Pago" class="w-24 border border-slate-300 rounded-lg p-1.5 text-xs text-right focus:ring-teal-500 focus:border-teal-500 font-semibold">
-                            <button onclick="handleQuickPaymentUpdate(${wp.id})" title="Atualizar valor pago" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs transition">
+                            <button onclick="handleQuickPaymentUpdate('${wp.id}')" title="Atualizar valor pago" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs transition">
                                 <i class="fa-solid fa-check"></i>
                             </button>
                         </div>
@@ -522,16 +516,19 @@
             appState.waypoints.forEach(wp => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                
+                const safeWp = JSON.stringify(wp).replace(/'/g, "&apos;");
+                
                 tr.innerHTML = `
                     <td class="p-3 text-xs font-mono">${formatDateTime(wp.data_hora)}</td>
                     <td class="p-3 font-semibold text-slate-800">${wp.atividade_local}</td>
                     <td class="p-3 text-slate-600">${formatCurrency(wp.valor_estimado)}</td>
                     <td class="p-3 text-emerald-600 font-semibold">${formatCurrency(wp.valor_pago)}</td>
                     <td class="p-3 text-center space-x-1">
-                        <button onclick='editWaypoint(${JSON.stringify(wp)})' class="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition">
+                        <button onclick='editWaypoint(${safeWp})' class="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button onclick="handleDeleteWaypoint(${wp.id})" class="bg-rose-50 text-rose-600 hover:bg-rose-100 p-2 rounded-lg transition">
+                        <button onclick="handleDeleteWaypoint('${wp.id}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 p-2 rounded-lg transition">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
@@ -554,7 +551,6 @@
                 return;
             }
 
-            // Group items by category
             const grouped = {};
             appState.checklist.forEach(item => {
                 const cat = item.categoria || 'Geral';
@@ -626,10 +622,16 @@
 
         async function handleSaveWaypoint(e) {
             e.preventDefault();
+            
+            if (!appState.currentTripId) {
+                alert("Selecione ou crie uma viagem primeiro.");
+                return;
+            }
+
             showSpinner(true);
 
             const wp = {
-                id: document.getElementById('wp_id').value || Date.now(),
+                id: document.getElementById('wp_id').value || 'wp_' + Date.now(),
                 trip_id: appState.currentTripId,
                 data_hora: document.getElementById('wp_data_hora').value,
                 atividade_local: document.getElementById('wp_atividade_local').value,
@@ -711,7 +713,19 @@
 
         function editWaypoint(wp) {
             document.getElementById('wp_id').value = wp.id;
-            document.getElementById('wp_data_hora').value = wp.data_hora ? wp.data_hora.slice(0, 16) : '';
+            
+            if (wp.data_hora) {
+                const dt = new Date(wp.data_hora);
+                if (!isNaN(dt.getTime())) {
+                    const isoStr = new Date(dt.getTime() - (dt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                    document.getElementById('wp_data_hora').value = isoStr;
+                } else {
+                    document.getElementById('wp_data_hora').value = wp.data_hora.slice(0, 16);
+                }
+            } else {
+                document.getElementById('wp_data_hora').value = '';
+            }
+
             document.getElementById('wp_atividade_local').value = wp.atividade_local || '';
             document.getElementById('wp_valor_estimado').value = wp.valor_estimado || '';
             document.getElementById('wp_valor_pago').value = wp.valor_pago || '';
@@ -824,13 +838,13 @@
         function formatDate(dateStr) {
             if (!dateStr) return '';
             const d = new Date(dateStr);
-            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            return isNaN(d) ? dateStr : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
         function formatDateTime(dateTimeStr) {
             if (!dateTimeStr) return '';
             const d = new Date(dateTimeStr);
-            return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            return isNaN(d) ? dateTimeStr : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
 
         function formatCurrency(val) {
@@ -840,4 +854,3 @@
     </script>
 </body>
 </html>
-
