@@ -17,8 +17,8 @@
 
   <!-- Configuração da API do Apps Script -->
   <script>
-    // SUBSTITUTE PELA SUA URL GERADA NO PASSO DE IMPLANTAÇÃO
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvlltkuspMMfkpbSbHXujbKBYKVJ-AMSSBURae5RUP0qaLmvM97N2LJg5xdynfdKS1/exec";
+    // Substitua pela sua URL gerada no Google Apps Script
+    const SCRIPT_URL = "SUA_URL_DO_APPS_SCRIPT_AQUI";
   </script>
 
   <!-- Header -->
@@ -30,7 +30,7 @@
       <h1 class="font-bold text-xl tracking-tight text-slate-900">Iti<span class="text-indigo-600">Go</span></h1>
     </div>
     
-    <button id="btnPin" onclick="abrirModalPin()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
+    <button id="btnPin" onclick="toggleModoEdicao()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
       <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500" id="iconLock"></i>
       <span id="txtAdmin">Modo Leitura</span>
     </button>
@@ -113,18 +113,27 @@
       <div class="space-y-3 text-sm">
         <div>
           <label class="font-semibold text-slate-600 block mb-1">Ponto de Parada / Atividade</label>
-          <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
-            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
           </div>
           <div>
             <label class="font-semibold text-slate-600 block mb-1">Data e Hora</label>
             <input type="datetime-local" id="wpDataHora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
           </div>
+        </div>
+
+        <!-- Pop-up automático integrado do Maps -->
+        <div id="boxPreviewMaps" class="hidden bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+            <span id="txtLinkMapsPreview" class="text-xs text-indigo-700 truncate font-medium">Link gerado automaticamente</span>
+          </div>
+          <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0">Testar</a>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -141,7 +150,6 @@
         <div>
           <label class="font-semibold text-slate-600 block mb-1">Foto do Lugar (URL da Imagem)</label>
           <input type="url" id="wpLinkFoto" placeholder="https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
-          <p class="text-[10px] text-slate-400 mt-0.5">Dica: Cole o link de imagem do Google Fotos, Unsplash ou Web.</p>
         </div>
 
         <div>
@@ -235,7 +243,6 @@
 
       const waypoints = appData.waypoints.filter(w => w.idViagem === idViagem);
 
-      // Calcular totais
       let est = 0, pago = 0;
       waypoints.forEach(w => {
         est += w.valorEstimado;
@@ -304,7 +311,23 @@
       return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
-    // Modal Controle PIN
+    // Controle de Modo Edição / PIN
+    function toggleModoEdicao() {
+      if (userPin) {
+        // Se já está logado, sair do modo de edição
+        userPin = null;
+        document.getElementById('txtAdmin').textContent = "Modo Leitura";
+        document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
+        document.getElementById('btnNovaViagem').classList.add('hidden');
+        document.getElementById('btnAddWaypoint').classList.add('hidden');
+        lucide.createIcons();
+        alert("Modo de edição encerrado.");
+      } else {
+        // Se está bloqueado, abrir modal para digitar o PIN
+        abrirModalPin();
+      }
+    }
+
     function abrirModalPin() { document.getElementById('modalPin').classList.remove('hidden'); }
     function fecharModalPin() { document.getElementById('modalPin').classList.add('hidden'); }
 
@@ -319,6 +342,7 @@
         document.getElementById('btnAddWaypoint').classList.remove('hidden');
         lucide.createIcons();
         fecharModalPin();
+        document.getElementById('inputPin').value = '';
       } else {
         alert("PIN Incorreto!");
       }
@@ -334,6 +358,7 @@
       const res = await API({ action: 'criarViagem', nomeViagem: nome });
       if (res.sucesso) {
         fecharModalViagem();
+        document.getElementById('inputNomeViagem').value = '';
         await carregarDados();
         document.getElementById('selectViagem').value = res.id;
         carregarRoteiro();
@@ -341,12 +366,46 @@
     }
 
     // Modal Waypoint
-    function abrirModalWaypoint() { document.getElementById('modalWaypoint').classList.remove('hidden'); }
+    function abrirModalWaypoint() { 
+      document.getElementById('wpId').value = '';
+      document.getElementById('wpAtividade').value = '';
+      document.getElementById('wpCidade').value = '';
+      document.getElementById('wpDataHora').value = '';
+      document.getElementById('wpValorEstimado').value = '';
+      document.getElementById('wpValorPago').value = '';
+      document.getElementById('wpLinkFoto').value = '';
+      document.getElementById('wpLinkMidia').value = '';
+      document.getElementById('wpObservacoes').value = '';
+      document.getElementById('boxPreviewMaps').classList.add('hidden');
+      
+      document.getElementById('modalWaypoint').classList.remove('hidden'); 
+    }
+    
     function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
+
+    // Geração automática do preview/link do Maps enquanto digita
+    function atualizarPreviewMaps() {
+      const atividade = document.getElementById('wpAtividade').value.trim();
+      const cidade = document.getElementById('wpCidade').value.trim();
+      const box = document.getElementById('boxPreviewMaps');
+      const txt = document.getElementById('txtLinkMapsPreview');
+      const btnTestar = document.getElementById('btnTestarMaps');
+
+      if (atividade || cidade) {
+        const query = encodeURIComponent(`${atividade}, ${cidade}`);
+        const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+        txt.textContent = `Maps: ${atividade}${cidade ? ' - ' + cidade : ''}`;
+        btnTestar.href = url;
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
 
     async function salvarWaypoint() {
       const idViagem = document.getElementById('selectViagem').value;
-      const nomeViagem = document.getElementById('selectViagem').options[document.getElementById('selectViagem').selectedIndex].text;
+      const selectViagemEl = document.getElementById('selectViagem');
+      const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
 
       const wp = {
         idViagem: idViagem,
