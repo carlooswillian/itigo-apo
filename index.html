@@ -150,17 +150,17 @@
             <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
           </div>
 
-          <!-- Campo para Colar a URL da Foto -->
+          <!-- Campo para Colar a Imagem (Suporta Link ou Copiar Imagem) -->
           <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
             <label class="block text-xs font-bold text-slate-700">
-              <i class="fa-solid fa-link text-brand-600 mr-1"></i> Cole o Link da Imagem Aqui:
+              <i class="fa-solid fa-image text-brand-600 mr-1"></i> Cole o Link OU a Própria Imagem:
             </label>
-            <input type="url" id="wpImagemUrl" oninput="previewImageURL()" placeholder="Cole aqui a URL da imagem (http...)" class="w-full border border-slate-200 bg-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+            <input type="text" id="wpImagemUrl" oninput="previewImageURL()" onpaste="handleImagePaste(event)" placeholder="Cole o link ou clique em 'Copiar Imagem' no Google e cole aqui..." class="w-full border border-slate-200 bg-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
             
             <div id="imagePreviewBox" class="mt-2 hidden">
               <span class="text-[10px] font-bold text-slate-400 block mb-1">Prévia da imagem:</span>
               <img id="imgPreview" src="" class="h-40 w-full object-cover rounded-xl border border-slate-200 shadow-sm" onerror="handleImageError()">
-              <p id="imgErrorMsg" class="text-[11px] text-red-500 font-semibold hidden mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>Link de imagem inválido ou não suportado.</p>
+              <p id="imgErrorMsg" class="text-[11px] text-red-500 font-semibold hidden mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>Imagem não reconhecida ou erro ao carregar.</p>
             </div>
           </div>
 
@@ -354,6 +354,24 @@
       window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(local)}`, '_blank');
     }
 
+    // Captura quando o usuário cola uma imagem diretamente da área de transferência
+    function handleImagePaste(event) {
+      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      for (let item of items) {
+        if (item.type.indexOf("image") !== -1) {
+          event.preventDefault();
+          const blob = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById("wpImagemUrl").value = e.target.result; // Converte para Base64
+            previewImageURL();
+          };
+          reader.readAsDataURL(blob);
+          return;
+        }
+      }
+    }
+
     function previewImageURL() {
       const url = document.getElementById("wpImagemUrl").value.trim();
       const previewBox = document.getElementById("imagePreviewBox");
@@ -362,7 +380,7 @@
 
       errorMsg.classList.add("hidden");
 
-      if (url && url.startsWith("http")) {
+      if (url && (url.startsWith("http") || url.startsWith("data:image"))) {
         img.src = url;
         previewBox.classList.remove("hidden");
       } else {
