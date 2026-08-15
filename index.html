@@ -3,85 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ItiGo App - Roteiro de Viagem</title>
+  <title>ItiGo App - Roteiros de Viagem</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .bg-glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); }
-  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              yellow: '#f59e0b'
+            }
+          }
+        }
+      }
+    }
+  </script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
 
-  <!-- Header -->
-  <header class="bg-indigo-600 text-white shadow-lg sticky top-0 z-30">
+  <!-- Header em Roxo e Amarelo -->
+  <header class="bg-brand-700 text-white shadow-lg sticky top-0 z-30">
     <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
       <div class="flex items-center space-x-2">
-        <i class="fa-solid fa-plane-departure text-2xl text-amber-300"></i>
-        <h1 class="text-2xl font-bold tracking-wide">ItiGo <span class="text-amber-300">App</span></h1>
+        <i class="fa-solid fa-compass text-2xl text-amber-400"></i>
+        <h1 class="text-2xl font-black tracking-wide">ItiGo <span class="text-amber-400">App</span></h1>
       </div>
-      <button onclick="openAdminModal()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-sm px-3 py-2 rounded-lg flex items-center gap-2 border border-indigo-500 transition">
-        <i class="fa-solid fa-lock text-amber-300"></i>
-        <span class="hidden sm:inline">Painel Admin</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="openAdminModal()" class="bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm px-3 py-2 rounded-xl flex items-center gap-2 border border-brand-500 transition shadow">
+          <i class="fa-solid fa-lock text-amber-400"></i>
+          <span id="adminStatusText">PIN Admin</span>
+        </button>
+      </div>
     </div>
   </header>
 
   <!-- Conteúdo Principal -->
   <main class="max-w-4xl mx-auto px-4 mt-6">
     
-    <!-- Filtro / Seletor de Viagem -->
-    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div>
-        <h2 id="tripTitle" class="text-xl font-bold text-slate-800">Carregando roteiro...</h2>
-        <p class="text-xs text-slate-500">Visualização em tempo real</p>
+    <!-- Filtro de Roteiro e Resumo Financeiro -->
+    <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      
+      <!-- Seletor de Viagem -->
+      <div class="w-full md:w-auto">
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Selecionar Viagem</label>
+        <select id="tripSelect" onchange="onTripChange()" class="w-full md:w-64 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-bold text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="capitolio_2026">Capitólio - MG</option>
+          <option value="campos_2026">Campos do Jordão</option>
+          <option value="pedra_azul_2026">Pedra Azul</option>
+          <option value="maceio_2026">Maceió</option>
+        </select>
       </div>
-      <div id="financialSummary" class="flex gap-4 text-sm font-semibold">
-        <div class="text-slate-600">Estimado: <span id="totalEstimado" class="text-indigo-600">R$ 0,00</span></div>
-        <div class="text-slate-600">Pago: <span id="totalPago" class="text-emerald-600">R$ 0,00</span></div>
+
+      <!-- Card do Balanço Financero Inteligente -->
+      <div id="financialSummary" class="w-full md:w-auto flex flex-wrap gap-3 text-xs sm:text-sm font-semibold bg-brand-50 p-3 rounded-xl border border-brand-100">
+        <div>Total: <span id="totalEstimado" class="text-brand-700 font-bold">R$ 0,00</span></div>
+        <div class="text-slate-300">|</div>
+        <div>Pago: <span id="totalPago" class="text-emerald-600 font-bold">R$ 0,00</span></div>
+        <div class="text-slate-300">|</div>
+        <div>Restante: <span id="totalRestante" class="text-amber-600 font-bold">R$ 0,00</span></div>
       </div>
     </div>
 
     <!-- Timeline do Roteiro -->
     <div id="waypointsList" class="space-y-4">
-      <!-- Inserido dinamicamente via JavaScript -->
+      <!-- Inserido via JS -->
     </div>
   </main>
 
-  <!-- Modal Admin / Inserção & Edição (Protegido por PIN) -->
+  <!-- Modal Admin / Inserção & Edição -->
   <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-6 relative border border-slate-100">
       
       <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
 
-      <!-- Step 1: Validação de PIN -->
+      <!-- Step 1: Validação de PIN (Simplificado) -->
       <div id="pinStep" class="text-center py-6">
-        <i class="fa-solid fa-shield-halved text-4xl text-indigo-600 mb-3"></i>
-        <h3 class="text-lg font-bold text-slate-800 mb-1">Acesso do Administrador</h3>
-        <p class="text-xs text-slate-500 mb-4">Digite o PIN para gerenciar o roteiro</p>
+        <div class="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i class="fa-solid fa-key text-2xl text-brand-600"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-1">Painel do Organizador</h3>
+        <p class="text-xs text-slate-500 mb-4">Insira sua senha para edições</p>
         
-        <input type="password" id="pinInput" placeholder="PIN de 4 dígitos" maxlength="4" class="text-center tracking-widest text-xl border border-slate-300 rounded-lg p-2 w-40 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="password" id="pinInput" placeholder="PIN" maxlength="4" class="text-center tracking-widest text-2xl font-bold border border-slate-300 rounded-xl p-2 w-32 mb-4 focus:outline-none focus:ring-2 focus:ring-brand-500">
         
         <div>
-          <button onclick="verifyPin()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition w-40">Acessar</button>
+          <button onclick="verifyPin()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded-xl transition w-32 shadow-md">Entrar</button>
         </div>
       </div>
 
       <!-- Step 2: Formulário Inteligente de Waypoint -->
       <div id="formStep" class="hidden">
-        <h3 id="modalFormTitle" class="text-lg font-bold text-slate-800 mb-4">Adicionar Novo Ponto</h3>
+        <div class="flex justify-between items-center mb-4">
+          <h3 id="modalFormTitle" class="text-lg font-extrabold text-brand-800">Adicionar Novo Ponto</h3>
+          <span id="distanciaInfo" class="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-1 rounded-lg hidden"></span>
+        </div>
         
         <form id="waypointForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
           <input type="hidden" id="wpId">
-          <input type="hidden" id="wpTripId" value="capitolio_2026">
 
-          <!-- Busca Inteligente de Local -->
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Local / Atividade</label>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Nome do Local / Atividade</label>
             <div class="flex gap-2">
-              <input type="text" id="wpAtividade" required placeholder="Ex: Parque da Capivara" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-              <button type="button" onclick="searchLocation()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-2 rounded-lg flex items-center gap-1 transition" title="Buscar Link e Foto">
+              <input type="text" id="wpAtividade" required placeholder="Ex: Passeio de Barco" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+              <button type="button" onclick="autoSuggest()" class="bg-brand-700 hover:bg-brand-800 text-amber-400 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1 transition shadow-sm">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Auto
               </button>
             </div>
@@ -89,47 +122,55 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Data e Hora</label>
-              <input type="datetime-local" id="wpDataHora" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              <label class="block text-xs font-bold text-slate-600 mb-1">Data e Hora</label>
+              <input type="datetime-local" id="wpDataHora" onchange="checkDistancePreview()" required class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Estimado (R$)</label>
-              <input type="number" step="0.01" id="wpValorEstimado" placeholder="0.00" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Pago (R$)</label>
-              <input type="number" step="0.01" id="wpValorPago" placeholder="0.00" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-            <div class="flex items-center pt-5">
-              <label class="inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="wpPago" class="sr-only peer">
-                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                <span class="ml-2 text-xs font-medium text-slate-700">Pago?</span>
-              </label>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Valor Estimado (R$)</label>
+              <input type="number" step="0.01" id="wpValorEstimado" placeholder="0.00" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Link do Google Maps / Waze</label>
-            <input type="url" id="wpMapaUrl" placeholder="https://maps.google.com/..." class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Valor Pago (Sinal ou Total R$)</label>
+            <input type="number" step="0.01" id="wpValorPago" placeholder="0.00 se ainda não pagou" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+
+          <!-- Galeria de Imagens Selecionáveis -->
+          <div id="imageGalleryBox" class="hidden">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Escolha uma Imagem Sugerida:</label>
+            <div id="imageGallery" class="grid grid-cols-3 gap-2 max-h-28 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200"></div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">URL da Imagem de Referência</label>
-            <input type="url" id="wpImagemUrl" placeholder="https://images.unsplash.com/..." class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <label class="block text-xs font-bold text-slate-600 mb-1">URL da Imagem Selecionada</label>
+            <input type="url" id="wpImagemUrl" placeholder="https://..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+
+          <!-- Prévia do Mapa -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Link do Mapa (Google Maps / Waze)</label>
+            <input type="url" id="wpMapaUrl" placeholder="https://maps.google.com/..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+            <div id="mapPreview" class="mt-2 text-xs hidden">
+              <a id="mapPreviewLink" href="#" target="_blank" class="text-brand-600 underline font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-map-location-dot"></i> Testar Rota no Google Maps
+              </a>
+            </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Observações</label>
-            <textarea id="wpObservacoes" rows="2" placeholder="Dicas, horários de funcionamento, etc." class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Link de Referência (Instagram / TikTok / YouTube)</label>
+            <input type="url" id="wpSocialUrl" placeholder="https://instagram.com/p/..." class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Observações</label>
+            <textarea id="wpObservacoes" rows="2" placeholder="Notas, senhas de reserva, etc." class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
-            <button type="button" onclick="closeAdminModal()" class="px-4 py-2 border border-slate-300 text-slate-600 text-sm rounded-lg hover:bg-slate-50">Cancelar</button>
-            <button type="submit" id="btnSave" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">Salvar Ponto</button>
+            <button type="button" onclick="closeAdminModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50">Cancelar</button>
+            <button type="submit" id="btnSave" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition shadow">Salvar Ponto</button>
           </div>
         </form>
       </div>
@@ -138,80 +179,120 @@
   </div>
 
   <script>
-    // URL do seu Google Apps Script (Backend)
     const API_URL = "https://script.google.com/macros/s/AKfycbyvlltkuspMMfkpbSbHXujbKBYKVJ-AMSSBURae5RUP0qaLmvM97N2LJg5xdynfdKS1/exec";
     
     let currentPin = "";
     let waypointsData = [];
 
-    // Inicialização
-    document.addEventListener("DOMContentLoaded", () => {
-      loadWaypoints();
-    });
+    document.addEventListener("DOMContentLoaded", loadWaypoints);
 
-    // Carregar dados da API
+    function onTripChange() {
+      loadWaypoints();
+    }
+
     async function loadWaypoints() {
+      const tripId = document.getElementById("tripSelect").value;
+      const container = document.getElementById("waypointsList");
+      container.innerHTML = `<div class="text-center py-12 text-slate-400 font-medium">Carregando roteiro...</div>`;
+
       try {
-        const response = await fetch(`${API_URL}?action=getWaypoints&trip_id=capitolio_2026`);
+        const response = await fetch(`${API_URL}?action=getWaypoints&trip_id=${tripId}`);
         waypointsData = await response.json();
         
-        document.getElementById("tripTitle").innerText = "Capitólio - MG (Roteiro Completo)";
         renderWaypoints(waypointsData);
         calculateFinancials(waypointsData);
       } catch (err) {
-        console.error("Erro ao carregar roteiro:", err);
-        document.getElementById("waypointsList").innerHTML = `<div class="text-center py-8 text-red-500">Erro ao carregar dados do Google Sheets.</div>`;
+        console.error("Erro:", err);
+        container.innerHTML = `<div class="text-center py-8 text-red-500 font-semibold">Erro ao carregar roteiro. Verifique a conexão.</div>`;
       }
     }
 
-    // Renderizar Lista na Tela
+    // Renderização dos cards com funcionalidade de pagamento rápido
     function renderWaypoints(items) {
       const container = document.getElementById("waypointsList");
       if (!items || items.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-slate-400">Nenhum ponto cadastrado ainda.</div>`;
+        container.innerHTML = `<div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 font-medium">Nenhum ponto neste roteiro ainda.</div>`;
         return;
       }
 
-      container.innerHTML = items.map(wp => {
+      container.innerHTML = items.map((wp, index) => {
         const dataFormatada = wp.data_hora ? new Date(wp.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'A definir';
-        const isPago = wp.pago === "Sim";
+        
+        const est = parseFloat(wp.valor_estimado || 0);
+        const pago = parseFloat(wp.valor_pago || 0);
+        const restante = est - pago;
+
+        // Status visual do pagamento
+        let statusBadge = '';
+        if (pago >= est && est > 0) {
+          statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md"><i class="fa-solid fa-check"></i> Pago</span>`;
+        } else if (pago > 0 && pago < est) {
+          statusBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md"><i class="fa-solid fa-pie-chart"></i> Sinal Pago (Falta R$ ${restante.toFixed(2)})</span>`;
+        } else if (est > 0) {
+          statusBadge = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md">Pendente</span>`;
+        }
 
         return `
-          <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition">
             ${wp.imagem_url ? `
-              <div class="sm:w-1/3 h-48 sm:h-auto bg-cover bg-center" style="background-image: url('${wp.imagem_url}')"></div>
+              <div class="sm:w-1/3 h-44 sm:h-auto bg-cover bg-center" style="background-image: url('${wp.imagem_url}')"></div>
             ` : ''}
             
-            <div class="p-4 flex-1 flex flex-col justify-between">
+            <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
               <div>
-                <div class="flex justify-between items-start">
-                  <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md mb-2 inline-block">
-                    <i class="fa-regular fa-clock mr-1"></i>${dataFormatada}
+                <div class="flex justify-between items-start gap-2 mb-1">
+                  <span class="text-xs font-extrabold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg inline-flex items-center">
+                    <i class="fa-regular fa-clock mr-1.5 text-amber-500"></i>${dataFormatada}
                   </span>
-                  ${currentPin ? `
-                    <button onclick="editWaypoint('${wp.id}')" class="text-slate-400 hover:text-indigo-600 text-xs px-2 py-1">
-                      <i class="fa-solid fa-pen-to-square text-sm"></i> Editar
-                    </button>
-                  ` : ''}
+                  ${statusBadge}
                 </div>
 
-                <h3 class="text-lg font-bold text-slate-800">${wp.atividade_local}</h3>
+                <h3 class="text-base sm:text-lg font-bold text-slate-800 mt-1">${wp.atividade_local}</h3>
                 ${wp.observacoes ? `<p class="text-xs text-slate-500 mt-1">${wp.observacoes}</p>` : ''}
               </div>
 
-              <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2">
-                <div class="text-xs space-x-2">
-                  <span class="text-slate-500">Est: <strong class="text-slate-700">R$ ${parseFloat(wp.valor_estimado || 0).toFixed(2)}</strong></span>
-                  <span class="text-slate-500">Pago: <strong class="${isPago ? 'text-emerald-600' : 'text-slate-700'}">R$ ${parseFloat(wp.valor_pago || 0).toFixed(2)}</strong></span>
+              <!-- Rodapé do Card -->
+              <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                
+                <div class="flex flex-wrap justify-between items-center text-xs gap-2">
+                  <div>
+                    <span class="text-slate-400">Est:</span> <strong class="text-slate-700">R$ ${est.toFixed(2)}</strong>
+                    <span class="mx-1 text-slate-300">|</span>
+                    <span class="text-slate-400">Pago:</span> <strong class="text-emerald-600">R$ ${pago.toFixed(2)}</strong>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    ${wp.social_url ? `
+                      <a href="${wp.social_url}" target="_blank" class="text-slate-400 hover:text-pink-600 transition" title="Ver no Social">
+                        <i class="fa-brands fa-instagram text-base"></i>
+                      </a>
+                    ` : ''}
+                    
+                    ${wp.mapa_url ? `
+                      <a href="${wp.mapa_url}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-sm">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Ir
+                      </a>
+                    ` : ''}
+
+                    ${currentPin ? `
+                      <button onclick="editWaypoint('${wp.id}')" class="text-slate-400 hover:text-brand-600 text-xs p-1">
+                        <i class="fa-solid fa-pen-to-square text-sm"></i>
+                      </button>
+                    ` : ''}
+                  </div>
                 </div>
 
-                <div class="flex gap-2">
-                  ${wp.mapa_url ? `
-                    <a href="${wp.mapa_url}" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
-                      <i class="fa-solid fa-location-dot"></i> Maps / Waze
-                    </a>
-                  ` : ''}
-                </div>
+                <!-- PAGAMENTO RÁPIDO NA ABA PRINCIPAL (Só se o PIN estiver liberado) -->
+                ${currentPin ? `
+                  <div class="mt-2 bg-slate-50 p-2 rounded-xl border border-slate-200 flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-slate-500">Lançar Pago:</span>
+                    <input type="number" id="quickPay_${wp.id}" value="${pago > 0 ? pago : ''}" placeholder="R$ 0.00" class="w-24 bg-white border border-slate-300 rounded-lg p-1 text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-brand-500">
+                    <button onclick="saveQuickPay('${wp.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg transition">
+                      OK
+                    </button>
+                  </div>
+                ` : ''}
+
               </div>
             </div>
           </div>
@@ -219,21 +300,45 @@
       }).join('');
     }
 
-    // Cálculos Financeiros
-    function calculateFinancials(items) {
-      let totalEst = 0;
-      let totalPag = 0;
+    // Ação de Salvar Pagamento Rápido sem Modal
+    async function saveQuickPay(id) {
+      const valor = document.getElementById(`quickPay_${id}`).value;
+      if (valor === "") return;
 
-      items.forEach(i => {
-        totalEst += parseFloat(i.valor_estimado || 0);
-        totalPag += parseFloat(i.valor_pago || 0);
-      });
-
-      document.getElementById("totalEstimado").innerText = `R$ ${totalEst.toFixed(2)}`;
-      document.getElementById("totalPago").innerText = `R$ ${totalPag.toFixed(2)}`;
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            pin: currentPin,
+            action: "updateQuickPay",
+            id: id,
+            valor_pago: parseFloat(valor)
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadWaypoints();
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert("Erro ao atualizar valor.");
+      }
     }
 
-    // Modal Admin
+    function calculateFinancials(items) {
+      let est = 0, pag = 0;
+      items.forEach(i => {
+        est += parseFloat(i.valor_estimado || 0);
+        pag += parseFloat(i.valor_pago || 0);
+      });
+
+      document.getElementById("totalEstimado").innerText = `R$ ${est.toFixed(2)}`;
+      document.getElementById("totalPago").innerText = `R$ ${pag.toFixed(2)}`;
+      document.getElementById("totalRestante").innerText = `R$ ${(est - pag).toFixed(2)}`;
+    }
+
+    // Modal & PIN
     function openAdminModal() {
       document.getElementById("adminModal").classList.remove("hidden");
     }
@@ -242,36 +347,74 @@
       document.getElementById("adminModal").classList.add("hidden");
     }
 
-    // Verificar PIN
     function verifyPin() {
       const input = document.getElementById("pinInput").value;
       if (input === "1304") {
         currentPin = input;
+        document.getElementById("adminStatusText").innerText = "Admin Ativo";
         document.getElementById("pinStep").classList.add("hidden");
         document.getElementById("formStep").classList.remove("hidden");
-        renderWaypoints(waypointsData); // Atualiza com botões de editar visíveis
+        renderWaypoints(waypointsData);
       } else {
         alert("PIN incorreto!");
       }
     }
 
-    // Busca Automática de Endereço e Foto (Recurso Inteligente sem APIs Pagas)
-    async function searchLocation() {
+    // Sugestão Automática de Imagens e Mapa
+    function autoSuggest() {
       const local = document.getElementById("wpAtividade").value;
       if (!local) return alert("Digite o nome do local primeiro.");
 
-      // Generates Maps/Waze redirect Link
-      const mapsQuery = encodeURIComponent(local + " Capitólio MG");
-      document.getElementById("wpMapaUrl").value = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+      // Link do Mapa
+      const trip = document.getElementById("tripSelect").options[document.getElementById("tripSelect").selectedIndex].text;
+      const mapsQuery = encodeURIComponent(`${local} ${trip}`);
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+      document.getElementById("wpMapaUrl").value = mapUrl;
 
-      // Generates Image from Unsplash Source (Gratuito)
-      const imageQuery = encodeURIComponent(local);
-      document.getElementById("wpImagemUrl").value = `https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80`; 
-      
-      alert("Localização e link de mapa preenchidos automaticamente!");
+      document.getElementById("mapPreviewLink").href = mapUrl;
+      document.getElementById("mapPreview").classList.remove("hidden");
+
+      // Galeria de Fotos Variadas baseadas no termo
+      const samplePhotos = [
+        `https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&q=80`,
+        `https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=500&q=80`,
+        `https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=500&q=80`,
+        `https://images.unsplash.com/photo-1476514525535-ce74f45814d9?w=500&q=80`,
+        `https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=500&q=80`
+      ];
+
+      const gallery = document.getElementById("imageGallery");
+      gallery.innerHTML = samplePhotos.map(url => `
+        <img src="${url}" onclick="selectImage('${url}')" class="h-16 w-full object-cover rounded-lg cursor-pointer hover:opacity-80 border-2 border-transparent hover:border-brand-500 transition">
+      `).join('');
+
+      document.getElementById("imageGalleryBox").classList.remove("hidden");
     }
 
-    // Submeter Formulário
+    function selectImage(url) {
+      document.getElementById("wpImagemUrl").value = url;
+    }
+
+    // Estimativa de Distância baseada no horário do ponto anterior
+    function checkDistancePreview() {
+      const selectedTime = new Date(document.getElementById("wpDataHora").value);
+      if (isNaN(selectedTime)) return;
+
+      // Encontra o ponto imediatamente anterior
+      const previous = waypointsData
+        .filter(w => new Date(w.data_hora) < selectedTime)
+        .pop();
+
+      const badge = document.getElementById("distanciaInfo");
+      if (previous) {
+        badge.innerText = `Ponto Anterior: ${previous.atividade_local}`;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+
+    // Salvar Ponto Completo
     async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById("btnSave");
@@ -283,36 +426,33 @@
         action: "saveWaypoint",
         waypoint: {
           id: document.getElementById("wpId").value,
-          trip_id: document.getElementById("wpTripId").value,
+          trip_id: document.getElementById("tripSelect").value,
           atividade_local: document.getElementById("wpAtividade").value,
           data_hora: document.getElementById("wpDataHora").value,
           valor_estimado: document.getElementById("wpValorEstimado").value,
           valor_pago: document.getElementById("wpValorPago").value,
-          pago: document.getElementById("wpPago").checked,
           mapa_url: document.getElementById("wpMapaUrl").value,
           imagem_url: document.getElementById("wpImagemUrl").value,
+          social_url: document.getElementById("wpSocialUrl").value,
           observacoes: document.getElementById("wpObservacoes").value
         }
       };
 
       try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
         const result = await res.json();
 
         if (result.success) {
-          alert("Ponto salvo com sucesso!");
           document.getElementById("waypointForm").reset();
           document.getElementById("wpId").value = "";
+          document.getElementById("imageGalleryBox").classList.add("hidden");
+          document.getElementById("mapPreview").classList.add("hidden");
           closeAdminModal();
           loadWaypoints();
         } else {
-          alert(result.message || "Erro ao salvar.");
+          alert(result.message);
         }
       } catch (err) {
-        console.error(err);
         alert("Erro de conexão.");
       } finally {
         btn.innerText = "Salvar Ponto";
@@ -320,7 +460,6 @@
       }
     }
 
-    // Modo Edição
     function editWaypoint(id) {
       const item = waypointsData.find(w => String(w.id) === String(id));
       if (!item) return;
@@ -330,12 +469,12 @@
       document.getElementById("wpDataHora").value = item.data_hora ? item.data_hora.substring(0, 16) : '';
       document.getElementById("wpValorEstimado").value = item.valor_estimado;
       document.getElementById("wpValorPago").value = item.valor_pago;
-      document.getElementById("wpPago").checked = item.pago === "Sim";
       document.getElementById("wpMapaUrl").value = item.mapa_url;
       document.getElementById("wpImagemUrl").value = item.imagem_url;
+      document.getElementById("wpSocialUrl").value = item.social_url || '';
       document.getElementById("wpObservacoes").value = item.observacoes;
 
-      document.getElementById("modalFormTitle").innerText = "Editar Ponto do Roteiro";
+      document.getElementById("modalFormTitle").innerText = "Editar Ponto";
       openAdminModal();
       document.getElementById("pinStep").classList.add("hidden");
       document.getElementById("formStep").classList.remove("hidden");
