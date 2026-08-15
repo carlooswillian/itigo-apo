@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Flatpickr (Calendário e Relógio) -->
+  <!-- Flatpickr (Calendário e Relógio Customizados) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_purple.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -366,35 +366,44 @@
       let photoUrls = [];
 
       try {
-        const ddgUrl = `https://corsproxy.io/?${encodeURIComponent(`https://duckduckgo.com/i.js?q=${encodeURIComponent(local)}&o=json`)}`;
-        const resDdg = await fetch(ddgUrl);
-        const dataDdg = await resDdg.json();
+        // 1. Flickr Search API Publica (Direta e sem restrições de CORS)
+        const flickrUrl = `https://www.flickr.com/services/feeds/photos_public.gne?tags=${encodeURIComponent(local)}&format=json&nojsoncallback=1`;
+        const resFlickr = await fetch(flickrUrl);
+        const dataFlickr = await resFlickr.json();
 
-        if (dataDdg.results && dataDdg.results.length > 0) {
-          photoUrls = dataDdg.results.slice(0, 6).map(item => item.image);
+        if (dataFlickr.items && dataFlickr.items.length > 0) {
+          photoUrls = dataFlickr.items.slice(0, 6).map(item => item.media.m.replace('_m.', '_b.'));
         }
       } catch (err) {
-        console.warn("Falha na busca DuckDuckGo, tentando Wikimedia...", err);
+        console.warn("Flickr indisponível, ativando alternativas...", err);
       }
 
-      if (photoUrls.length === 0) {
+      // 2. Wikipedia API (Para pontos turísticos reconhecidos)
+      if (photoUrls.length < 2) {
         try {
-          const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(local)}&gsrlimit=4&prop=pageimages&pithumbsize=800`;
+          const wikiUrl = `https://pt.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&titles=${encodeURIComponent(local)}&pithumbsize=800`;
           const resWiki = await fetch(wikiUrl);
           const dataWiki = await resWiki.json();
 
           if (dataWiki.query && dataWiki.query.pages) {
             Object.values(dataWiki.query.pages).forEach(page => {
               if (page.thumbnail && page.thumbnail.source) {
-                photoUrls.push(page.thumbnail.source);
+                photoUrls.unshift(page.thumbnail.source);
               }
             });
           }
         } catch (e) {
-          console.error("Erro Wikimedia:", e);
+          console.error("Erro Wikipedia:", e);
         }
       }
 
+      // 3. Unsplash Dinâmico (Garante que nunca fique sem foto)
+      if (photoUrls.length === 0) {
+        const cleanSearch = local.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9 ]/g, "");
+        photoUrls.push(`https://source.unsplash.com/800x600/?${encodeURIComponent(cleanSearch)},travel`);
+      }
+
+      // Exibição na galeria
       if (photoUrls.length > 0) {
         gallery.innerHTML = photoUrls.map((url) => `
           <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 h-20" onclick="selectImage('${url}')">
