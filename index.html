@@ -290,7 +290,7 @@
         .sort((a, b) => {
           if (!a.dataHora) return 1;
           if (!b.dataHora) return -1;
-          return new Date(a.dataHora) - new Date(b.dataHora);
+          return String(a.dataHora).localeCompare(String(b.dataHora));
         });
 
       let est = 0, pago = 0;
@@ -389,12 +389,12 @@
 
     function formatarData(dataStr) {
       if(!dataStr) return '';
-      // Evita conversão de fuso ao exibir na listagem também
-      const stringData = String(dataStr).trim();
-      if (stringData.includes('T')) {
-        const partes = stringData.split('T');
+      // Lê puramente a string do banco (ex: 2026-08-26 11:30) sem conversão de fuso
+      const limpa = String(dataStr).trim().replace('T', ' ');
+      const partes = limpa.split(' ');
+      if (partes.length >= 2) {
         const dataPartes = partes[0].split('-');
-        const horaPartes = partes[1] ? partes[1].substring(0, 5) : '00:00';
+        const horaPartes = partes[1].substring(0, 5);
         if (dataPartes.length === 3) {
           return `${dataPartes[2]}/${dataPartes[1]}/${dataPartes[0]} às ${horaPartes}`;
         }
@@ -463,17 +463,12 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
-        // Correção definitiva de fuso horário: Tratamento puro por texto da string
+        // Tratamento puro da string do banco (ex: "2026-08-26 11:30")
         if (wp.dataHora) {
-          const stringData = String(wp.dataHora).trim();
-          if (stringData.includes('T')) {
-            const partes = stringData.split('T');
-            document.getElementById('wpData').value = partes[0] || '';
-            document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
-          } else {
-            document.getElementById('wpData').value = stringData.substring(0, 10);
-            document.getElementById('wpHora').value = '';
-          }
+          const limpa = String(wp.dataHora).trim().replace('T', ' ');
+          const partes = limpa.split(' ');
+          document.getElementById('wpData').value = partes[0] || '';
+          document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
         } else {
           document.getElementById('wpData').value = '';
           document.getElementById('wpHora').value = '';
@@ -563,7 +558,7 @@
       const horaVal = document.getElementById('wpHora').value;
       let dataHoraCombinada = '';
       if (dataVal) {
-        dataHoraCombinada = dataVal + (horaVal ? `T${horaVal}` : 'T00:00');
+        dataHoraCombinada = dataVal + (horaVal ? ` ${horaVal}` : ' 00:00');
       }
 
       const wp = {
