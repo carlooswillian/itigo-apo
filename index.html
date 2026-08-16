@@ -127,24 +127,30 @@
           </div>
         </div>
 
-        <!-- Pop-up automático e Mini Mapa Interativo com suporte completo a gestos de toque/dedos -->
+        <!-- Mini Mapa Interativo com Toque Livre e Botão de Ativação Manual -->
         <div id="boxPreviewMaps" class="hidden space-y-2">
           <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
             <div class="flex items-center gap-2 overflow-hidden">
               <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600 shrink-0"></i>
               <span id="txtLinkMapsPreview" class="text-xs text-indigo-700 truncate font-medium">Link gerado automaticamente</span>
             </div>
-            <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0">Abrir Maps / Rota</a>
+            <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0">Abrir Maps</a>
           </div>
 
-          <!-- Mini Mapa Interativo com Overlay Inteligente para Gestos -->
+          <!-- Container do Mapa -->
           <div id="mapContainer" class="relative w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
             <iframe id="iframeMapaPreview" src="" class="w-full h-full border-0 pointer-events-auto" allowfullscreen="" loading="lazy"></iframe>
             
-            <!-- Aviso visual elegante para toque com dois dedos em dispositivos móveis -->
-            <div id="mapTouchOverlay" class="absolute inset-0 bg-slate-900/20 backdrop-blur-[1px] flex items-center justify-center transition-opacity duration-300 pointer-events-none opacity-0">
-              <span class="bg-slate-900/80 text-white text-[11px] font-medium px-3 py-1.5 rounded-full shadow-lg">Use dois dedos para navegar no mapa</span>
+            <!-- Camada/Overlay para destravar o mapa com um toque simples -->
+            <div id="mapTouchOverlay" onclick="ativarToqueMapa()" class="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px] flex items-center justify-center transition-opacity duration-300 cursor-pointer">
+              <span class="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg flex items-center gap-1.5">
+                <i data-lucide="hand" class="w-4 h-4"></i> Toque para interagir com o mapa
+              </span>
             </div>
+          </div>
+          <div class="flex justify-between items-center px-1">
+            <span class="text-[10px] text-slate-400">Arraste com 1 dedo para mover livremente.</span>
+            <button type="button" onclick="desativarToqueMapa()" id="btnTravarMapa" class="hidden text-[10px] text-rose-600 font-bold hover:underline">Travar rolagem da página</button>
           </div>
         </div>
 
@@ -206,7 +212,6 @@
     window.onload = () => {
       lucide.createIcons();
       carregarDados();
-      configurarGestosMapa();
     };
 
     async function API(payload) {
@@ -390,10 +395,28 @@
       document.getElementById('boxPreviewMaps').classList.add('hidden');
       document.getElementById('iframeMapaPreview').src = '';
       
+      // Reseta o estado do toque do mapa
+      desativarToqueMapa();
+      
       document.getElementById('modalWaypoint').classList.remove('hidden'); 
     }
     
     function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
+
+    // Funções para habilitar/desabilitar o toque no mini mapa sob demanda
+    function ativarToqueMapa() {
+      const overlay = document.getElementById('mapTouchOverlay');
+      const btnTravar = document.getElementById('btnTravarMapa');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+      btnTravar.classList.remove('hidden');
+    }
+
+    function desativarToqueMapa() {
+      const overlay = document.getElementById('mapTouchOverlay');
+      const btnTravar = document.getElementById('btnTravarMapa');
+      overlay.classList.remove('opacity-0', 'pointer-events-none');
+      btnTravar.classList.add('hidden');
+    }
 
     // Geração automática do link e mini mapa interativo
     function atualizarPreviewMaps() {
@@ -413,46 +436,11 @@
         btnTestar.href = urlMaps;
         iframeMapa.src = urlEmbed;
         box.classList.remove('hidden');
+        desativarToqueMapa();
       } else {
         box.classList.add('hidden');
         iframeMapa.src = '';
       }
-    }
-
-    // Configuração inteligente de gestos (dois dedos para rolar/mover o mapa sem prender a rolagem da página)
-    function configurarGestosMapa() {
-      const container = document.getElementById('mapContainer');
-      const iframe = document.getElementById('iframeMapaPreview');
-      const overlay = document.getElementById('mapTouchOverlay');
-
-      if (!container || !iframe || !overlay) return;
-
-      // Em dispositivos touch, se o usuário tocar com 1 dedo, o iframe bloqueia a página. 
-      // Permitimos touch livre apenas se houver mais de um toque (dois dedos), senão o overlay intercepta o scroll vertical da página.
-      container.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 1) {
-          iframe.style.pointerEvents = 'auto';
-          overlay.classList.add('opacity-0');
-        } else {
-          iframe.style.pointerEvents = 'none';
-          overlay.classList.remove('opacity-0');
-        }
-      }, { passive: true });
-
-      container.addEventListener('touchend', () => {
-        iframe.style.pointerEvents = 'none';
-        overlay.classList.add('opacity-0');
-      }, { passive: true });
-
-      // Em computadores (mouse), o mapa funciona normalmente ao passar o mouse
-      container.addEventListener('mouseenter', () => {
-        iframe.style.pointerEvents = 'auto';
-      });
-
-      container.addEventListener('mouseleave', () => {
-        iframe.style.pointerEvents = 'none';
-        overlay.classList.add('opacity-0');
-      });
     }
 
     async function salvarWaypoint() {
