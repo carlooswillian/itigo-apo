@@ -28,7 +28,7 @@
     
     <button id="btnPin" onclick="toggleModoEdicao()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
       <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500" id="iconLock"></i>
-      <span id="txtAdmin">Modo Leitura</span>
+      <span id="txtAdmin">Modo de Edição</span>
     </button>
   </header>
 
@@ -54,9 +54,9 @@
           <span class="block text-[10px] font-bold text-emerald-600 uppercase">Pago</span>
           <span id="totalPago" class="text-sm font-extrabold text-emerald-700">R$ 0</span>
         </div>
-        <div class="bg-amber-50 p-2.5 rounded-xl">
-          <span class="block text-[10px] font-bold text-amber-600 uppercase">Falta</span>
-          <span id="totalFalta" class="text-sm font-extrabold text-amber-700">R$ 0</span>
+        <div id="boxDiferencaTotal" class="bg-slate-50 p-2.5 rounded-xl">
+          <span class="block text-[10px] font-bold text-slate-400 uppercase" id="lblDiferencaTotal">Diferença</span>
+          <span id="totalDiferenca" class="text-sm font-extrabold text-slate-700">R$ 0</span>
         </div>
       </div>
     </div>
@@ -179,16 +179,14 @@
     let appData = { viagens: [], waypoints: [] };
     let userPin = null;
 
-    // Tempo de expiração em milissegundos (24 horas = 24 * 60 * 60 * 1000)
     const TEMPO_EXPIRACAO_PIN = 24 * 60 * 60 * 1000;
 
     window.onload = () => {
       lucide.createIcons();
-      verificarPinSalvo(); // Verifica se já existe um PIN válido do dia
+      verificarPinSalvo();
       carregarDados();
     };
 
-    // Função para checar se o PIN salvo no navegador ainda é válido (menos de 24h)
     function verificarPinSalvo() {
       const pinSalvo = localStorage.getItem('itigo_pin');
       const timestampSalvo = localStorage.getItem('itigo_timestamp');
@@ -201,16 +199,14 @@
           userPin = pinSalvo;
           ativarModoEdicaoVisual();
         } else {
-          // Expirou, limpa os dados antigos
           localStorage.removeItem('itigo_pin');
           localStorage.removeItem('itigo_timestamp');
         }
       }
     }
 
-    // Ativa os elementos visuais de edição sem precisar revalidar na API
     function ativarModoEdicaoVisual() {
-      document.getElementById('txtAdmin').textContent = "Modo Edição";
+      document.getElementById('txtAdmin').textContent = "Modo de Leitura";
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
@@ -270,9 +266,30 @@
         pago += w.valorPago;
       });
 
+      // Cálculo da diferença total (Pago - Estimado)
+      // Se pago > estimado, gastou a mais (positivo/vermelho). Se pago < estimado, gastou a menos (negativo/verde).
+      const diferencaTotal = pago - est;
+      const boxDifTotal = document.getElementById('boxDiferencaTotal');
+      const lblDifTotal = document.getElementById('lblDiferencaTotal');
+      const valDifTotal = document.getElementById('totalDiferenca');
+
       document.getElementById('totalEstimado').textContent = `R$ ${est.toFixed(2)}`;
       document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
-      document.getElementById('totalFalta').textContent = `R$ ${(est - pago).toFixed(2)}`;
+      valDifTotal.textContent = `R$ ${Math.abs(diferencaTotal).toFixed(2)}`;
+
+      if (diferencaTotal > 0) {
+        boxDifTotal.className = "bg-rose-50 p-2.5 rounded-xl";
+        lblDifTotal.className = "block text-[10px] font-bold text-rose-600 uppercase";
+        valDifTotal.className = "text-sm font-extrabold text-rose-700";
+      } else if (diferencaTotal < 0) {
+        boxDifTotal.className = "bg-emerald-50 p-2.5 rounded-xl";
+        lblDifTotal.className = "block text-[10px] font-bold text-emerald-600 uppercase";
+        valDifTotal.className = "text-sm font-extrabold text-emerald-700";
+      } else {
+        boxDifTotal.className = "bg-slate-50 p-2.5 rounded-xl";
+        lblDifTotal.className = "block text-[10px] font-bold text-slate-400 uppercase";
+        valDifTotal.className = "text-sm font-extrabold text-slate-700";
+      }
 
       if (waypoints.length === 0) {
         container.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium text-sm">Nenhum ponto adicionado a esta viagem.</div>`;
@@ -282,6 +299,15 @@
       waypoints.forEach(w => {
         const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
         const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
+
+        // Diferença individual do waypoint (Pago - Estimado)
+        const diffWp = w.valorPago - w.valorEstimado;
+        let corDiffWp = "text-slate-800";
+        if (diffWp > 0) {
+          corDiffWp = "text-rose-600 font-extrabold"; // Gastou a mais (Vermelho)
+        } else if (diffWp < 0) {
+          corDiffWp = "text-emerald-600 font-extrabold"; // Gastou a menos (Verde)
+        }
 
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition";
@@ -305,9 +331,10 @@
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
               <div>
-                <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
+                <span class="text-slate-400 block text-[10px]">Estimado / Pago / Dif.</span>
                 <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
-                <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-emerald-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
+                <span class="font-extrabold text-emerald-700">R$ ${w.valorPago.toFixed(2)}</span> / 
+                <span class="${corDiffWp}">R$ ${diffWp > 0 ? '+' : ''}${diffWp.toFixed(2)}</span>
               </div>
               
               <div class="flex items-center gap-2">
@@ -332,14 +359,13 @@
       return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
-    // Controle de Modo Edição / PIN
     function toggleModoEdicao() {
       if (userPin) {
         userPin = null;
         localStorage.removeItem('itigo_pin');
         localStorage.removeItem('itigo_timestamp');
         
-        document.getElementById('txtAdmin').textContent = "Modo Leitura";
+        document.getElementById('txtAdmin').textContent = "Modo de Edição";
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
         document.getElementById('btnAddWaypoint').classList.add('hidden');
@@ -371,7 +397,6 @@
       }
     }
 
-    // Modal Viagem
     function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
     function fecharModalViagem() { document.getElementById('modalViagem').classList.add('hidden'); }
 
@@ -388,7 +413,6 @@
       }
     }
 
-    // Modal Waypoint
     function abrirModalWaypoint() { 
       document.getElementById('wpId').value = '';
       document.getElementById('wpAtividade').value = '';
@@ -435,7 +459,7 @@
         nomeViagem: nomeViagem,
         atividade: document.getElementById('wpAtividade').value,
         cidade: document.getElementById('wpCidade').value,
-        dataHora: document.getElementById('wpDataHora').value,
+        dataHora: document.getElementById('wpDataHora'].value,
         valorEstimado: parseFloat(document.getElementById('wpValorEstimado').value) || 0,
         valorPago: parseFloat(document.getElementById('wpValorPago').value) || 0,
         linkFoto: document.getElementById('wpLinkFoto').value,
@@ -451,7 +475,6 @@
       }
     }
 
-    // Modal Pagamento Rápido
     function abrirModalPagamento(id, valorAtual) {
       document.getElementById('pagWpId').value = id;
       document.getElementById('pagValorInput').value = valorAtual;
