@@ -209,6 +209,7 @@
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
+      carregarRoteiro(); // Recarrega para exibir os botões de edição/exclusão nos cards
       lucide.createIcons();
     }
 
@@ -257,13 +258,12 @@
       const container = document.getElementById('listaWaypoints');
       container.innerHTML = '';
 
-      // Filtra e ordena os waypoints cronologicamente por data/hora
       const waypoints = appData.waypoints
         .filter(w => w.idViagem === idViagem)
         .sort((a, b) => {
-          if (!a.dataHora) return 1;  // Itens sem data vão para o final
+          if (!a.dataHora) return 1;
           if (!b.dataHora) return -1;
-          return new Date(a.dataHora) - new Date(b.dataHora); // Ordem crescente (mais antigo para mais recente)
+          return new Date(a.dataHora) - new Date(b.dataHora);
         });
 
       let est = 0, pago = 0;
@@ -306,6 +306,18 @@
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition";
 
+        // Botões de edição/exclusão exibidos apenas se o usuário estiver autenticado (userPin ativo)
+        const botoesAdmin = userPin ? `
+          <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
+            <button onclick='abrirModalWaypoint(${JSON.stringify(w)})' class="text-slate-500 hover:text-indigo-600 p-1.5 transition" title="Editar Waypoint">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button onclick="excluirWaypoint('${w.id}')" class="text-slate-500 hover:text-rose-600 p-1.5 transition" title="Excluir Waypoint">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        ` : '';
+
         card.innerHTML = `
           ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
           <div class="p-4 space-y-2">
@@ -314,9 +326,12 @@
                 <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Ponto de Parada'}</span>
                 <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
               </div>
-              <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
-                <i data-lucide="map-pin" class="w-5 h-5"></i>
-              </a>
+              <div class="flex items-center gap-1">
+                <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
+                  <i data-lucide="map-pin" class="w-5 h-5"></i>
+                </a>
+                ${botoesAdmin}
+              </div>
             </div>
 
             ${w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
@@ -362,6 +377,7 @@
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
         document.getElementById('btnAddWaypoint').classList.add('hidden');
+        carregarRoteiro();
         lucide.createIcons();
         alert("Modo de edição encerrado com sucesso.");
       } else {
@@ -405,18 +421,32 @@
       }
     }
 
-    function abrirModalWaypoint() { 
-      document.getElementById('wpId').value = '';
-      document.getElementById('wpAtividade').value = '';
-      document.getElementById('wpCidade').value = '';
-      document.getElementById('wpDataHora').value = '';
-      document.getElementById('wpValorEstimado').value = '';
-      document.getElementById('wpValorPago').value = '';
-      document.getElementById('wpLinkFoto').value = '';
-      document.getElementById('wpLinkMidia').value = '';
-      document.getElementById('wpObservacoes').value = '';
-      document.getElementById('boxPreviewMaps').classList.add('hidden');
+    function abrirModalWaypoint(wp = null) { 
+      if (wp && typeof wp === 'object') {
+        document.getElementById('tituloModalWp').textContent = 'Editar Waypoint';
+        document.getElementById('wpId').value = wp.id || '';
+        document.getElementById('wpAtividade').value = wp.atividade || '';
+        document.getElementById('wpCidade').value = wp.cidade || '';
+        document.getElementById('wpDataHora').value = wp.dataHora || '';
+        document.getElementById('wpValorEstimado').value = wp.valorEstimado || '';
+        document.getElementById('wpValorPago').value = wp.valorPago || '';
+        document.getElementById('wpLinkFoto').value = wp.linkFoto || '';
+        document.getElementById('wpLinkMidia').value = wp.linkMidia || '';
+        document.getElementById('wpObservacoes').value = wp.observacoes || '';
+      } else {
+        document.getElementById('tituloModalWp').textContent = 'Novo Waypoint';
+        document.getElementById('wpId').value = '';
+        document.getElementById('wpAtividade').value = '';
+        document.getElementById('wpCidade').value = '';
+        document.getElementById('wpDataHora').value = '';
+        document.getElementById('wpValorEstimado').value = '';
+        document.getElementById('wpValorPago').value = '';
+        document.getElementById('wpLinkFoto').value = '';
+        document.getElementById('wpLinkMidia').value = '';
+        document.getElementById('wpObservacoes').value = '';
+      }
       
+      atualizarPreviewMaps();
       document.getElementById('modalWaypoint').classList.remove('hidden'); 
     }
     
@@ -447,6 +477,7 @@
       const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
 
       const wp = {
+        id: document.getElementById('wpId').value,
         idViagem: idViagem,
         nomeViagem: nomeViagem,
         atividade: document.getElementById('wpAtividade').value,
@@ -461,9 +492,18 @@
 
       const res = await API({ action: 'salvarWaypoint', waypoint: wp });
       if(res.sucesso) {
-        abrirModalWaypoint();
         fecharModalWaypoint();
         await carregarDados();
+      }
+    }
+
+    async function excluirWaypoint(idWaypoint) {
+      if (!confirm("Tem certeza que deseja excluir este waypoint?")) return;
+      const res = await API({ action: 'excluirWaypoint', idWaypoint: idWaypoint });
+      if (res.sucesso) {
+        await carregarDados();
+      } else {
+        alert("Erro ao excluir waypoint.");
       }
     }
 
