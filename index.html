@@ -179,10 +179,43 @@
     let appData = { viagens: [], waypoints: [] };
     let userPin = null;
 
+    // Tempo de expiração em milissegundos (24 horas = 24 * 60 * 60 * 1000)
+    const TEMPO_EXPIRACAO_PIN = 24 * 60 * 60 * 1000;
+
     window.onload = () => {
       lucide.createIcons();
+      verificarPinSalvo(); // Verifica se já existe um PIN válido do dia
       carregarDados();
     };
+
+    // Função para checar se o PIN salvo no navegador ainda é válido (menos de 24h)
+    function verificarPinSalvo() {
+      const pinSalvo = localStorage.getItem('itigo_pin');
+      const timestampSalvo = localStorage.getItem('itigo_timestamp');
+
+      if (pinSalvo && timestampSalvo) {
+        const agora = new Date().getTime();
+        const tempoDecorrido = agora - parseInt(timestampSalvo, 10);
+
+        if (tempoDecorrido < TEMPO_EXPIRACAO_PIN) {
+          userPin = pinSalvo;
+          ativarModoEdicaoVisual();
+        } else {
+          // Expirou, limpa os dados antigos
+          localStorage.removeItem('itigo_pin');
+          localStorage.removeItem('itigo_timestamp');
+        }
+      }
+    }
+
+    // Ativa os elementos visuais de edição sem precisar revalidar na API
+    function ativarModoEdicaoVisual() {
+      document.getElementById('txtAdmin').textContent = "Modo Edição";
+      document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
+      document.getElementById('btnNovaViagem').classList.remove('hidden');
+      document.getElementById('btnAddWaypoint').classList.remove('hidden');
+      lucide.createIcons();
+    }
 
     async function API(payload) {
       if (userPin) payload.pin = userPin;
@@ -303,6 +336,9 @@
     function toggleModoEdicao() {
       if (userPin) {
         userPin = null;
+        localStorage.removeItem('itigo_pin');
+        localStorage.removeItem('itigo_timestamp');
+        
         document.getElementById('txtAdmin').textContent = "Modo Leitura";
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
@@ -320,13 +356,14 @@
     async function confirmarPin() {
       const pin = document.getElementById('inputPin').value;
       const res = await API({ action: 'validarPin', pin: pin });
+      
       if (res.sucesso) {
         userPin = pin;
-        document.getElementById('txtAdmin').textContent = "Modo Edição";
-        document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
-        document.getElementById('btnNovaViagem').classList.remove('hidden');
-        document.getElementById('btnAddWaypoint').classList.remove('hidden');
-        lucide.createIcons();
+        
+        localStorage.setItem('itigo_pin', pin);
+        localStorage.setItem('itigo_timestamp', new Date().getTime().toString());
+
+        ativarModoEdicaoVisual();
         fecharModalPin();
         document.getElementById('inputPin').value = '';
       } else {
@@ -369,7 +406,6 @@
     
     function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
 
-    // Atualização limpa do link dinâmico para o Maps
     function atualizarPreviewMaps() {
       const atividade = document.getElementById('wpAtividade').value.trim();
       const cidade = document.getElementById('wpCidade').value.trim();
