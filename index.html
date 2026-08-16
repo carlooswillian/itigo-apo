@@ -456,10 +456,18 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
+        // CORREÇÃO: Leitura segura de data e hora independente do formato salvo na planilha
         if (wp.dataHora) {
-          const partes = wp.dataHora.split('T');
-          document.getElementById('wpData').value = partes[0] || '';
-          document.getElementById('wpHora').value = partes[1] || '';
+          const strData = String(wp.dataHora);
+          if (strData.includes('T')) {
+            const partes = strData.split('T');
+            document.getElementById('wpData').value = partes[0] || '';
+            document.getElementById('wpHora').value = (partes[1] ? partes[1].substring(0, 5) : '');
+          } else {
+            // Caso seja apenas a data ou outro formato
+            document.getElementById('wpData').value = strData.substring(0, 10);
+            document.getElementById('wpHora').value = '';
+          }
         } else {
           document.getElementById('wpData').value = '';
           document.getElementById('wpHora').value = '';
@@ -527,7 +535,6 @@
       const erroFoto = document.getElementById('erroFoto');
       const btnPesquisarImagens = document.getElementById('btnPesquisarImagens');
 
-      // Atualiza link de busca do Google Imagens
       const termoBuscaImg = encodeURIComponent(`${atividade} ${cidade} turismo`.trim());
       btnPesquisarImagens.href = `https://www.google.com/search?q=${termoBuscaImg}&tbm=isch`;
 
