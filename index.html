@@ -418,7 +418,7 @@
           setTimeout(() => {
             elementoParaFocar.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
           }, 2000);
-        }, 100);
+        }, 150);
       }
     }
 
@@ -639,7 +639,7 @@
         const res = await API({ action: 'salvarWaypoint', waypoint: wp });
         if(res.sucesso) {
           await carregarDados();
-          const idFoco = wp.id || res.idWaypointCriado;
+          const idFoco = wp.id || res.id;
           carregarRoteiro(idFoco);
         }
       } finally {
