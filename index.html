@@ -150,6 +150,7 @@
             </div>
           </div>
 
+          <!-- Seção de Foto Ajustada com Prévia e Atalho para o Google Imagens -->
           <div class="space-y-2">
             <div class="flex justify-between items-center">
               <label class="font-semibold text-slate-600 block text-xs">Foto do Lugar (URL da Imagem)</label>
@@ -290,7 +291,7 @@
         .sort((a, b) => {
           if (!a.dataHora) return 1;
           if (!b.dataHora) return -1;
-          return String(a.dataHora).localeCompare(String(b.dataHora));
+          return new Date(a.dataHora) - new Date(b.dataHora);
         });
 
       let est = 0, pago = 0;
@@ -389,22 +390,9 @@
 
     function formatarData(dataStr) {
       if(!dataStr) return '';
-      // Remove qualquer formatação de data ISO e extrai a string pura do banco
-      let limpa = String(dataStr).trim();
-      if (limpa.includes('T')) {
-        limpa = limpa.replace('T', ' ');
-      }
-      // Se vier no formato ISO completo com fuso (ex: 2026-08-26T11:30:00.000Z), removemos a conversão e tratamos se necessário, 
-      // mas como o banco está salvando "2026-08-26 11:30", pegamos estritamente os pedaços por texto:
-      const partes = limpa.split(' ');
-      if (partes.length >= 2) {
-        const dataPartes = partes[0].split('-');
-        const horaPartes = partes[1].substring(0, 5);
-        if (dataPartes.length === 3) {
-          return `${dataPartes[2]}/${dataPartes[1]}/${dataPartes[0]} às ${horaPartes}`;
-        }
-      }
-      return dataStr;
+      const d = new Date(dataStr);
+      if (isNaN(d.getTime())) return dataStr;
+      return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
     function toggleModoEdicao() {
@@ -468,30 +456,10 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
-        // Tratamento estritamente por texto para ignorar conversões de fuso do JS
         if (wp.dataHora) {
-          let limpa = String(wp.dataHora).trim().replace('T', ' ');
-          // Se o Apps Script entregou como string de data completa com fuso (ex: GMT-0300), limpamos para pegar só a data e hora locais
-          if (limpa.includes('GMT')) {
-            const dObj = new Date(wp.dataHora);
-            if (!isNaN(dObj.getTime())) {
-              const ano = dObj.getFullYear();
-              const mes = String(dObj.getMonth() + 1).padStart(2, '0');
-              const dia = String(dObj.getDate()).padStart(2, '0');
-              const hora = String(dObj.getHours()).padStart(2, '0');
-              const min = String(dObj.getMinutes()).padStart(2, '0');
-              document.getElementById('wpData').value = `${ano}-${mes}-${dia}`;
-              document.getElementById('wpHora').value = `${hora}:${min}`;
-            } else {
-              const partes = limpa.split(' ');
-              document.getElementById('wpData').value = partes[0] || '';
-              document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
-            }
-          } else {
-            const partes = limpa.split(' ');
-            document.getElementById('wpData').value = partes[0] || '';
-            document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
-          }
+          const partes = wp.dataHora.split('T');
+          document.getElementById('wpData').value = partes[0] || '';
+          document.getElementById('wpHora').value = partes[1] || '';
         } else {
           document.getElementById('wpData').value = '';
           document.getElementById('wpHora').value = '';
@@ -559,6 +527,7 @@
       const erroFoto = document.getElementById('erroFoto');
       const btnPesquisarImagens = document.getElementById('btnPesquisarImagens');
 
+      // Atualiza link de busca do Google Imagens
       const termoBuscaImg = encodeURIComponent(`${atividade} ${cidade} turismo`.trim());
       btnPesquisarImagens.href = `https://www.google.com/search?q=${termoBuscaImg}&tbm=isch`;
 
@@ -581,7 +550,7 @@
       const horaVal = document.getElementById('wpHora').value;
       let dataHoraCombinada = '';
       if (dataVal) {
-        dataHoraCombinada = dataVal + (horaVal ? ` ${horaVal}` : ' 00:00');
+        dataHoraCombinada = dataVal + (horaVal ? `T${horaVal}` : 'T00:00');
       }
 
       const wp = {
