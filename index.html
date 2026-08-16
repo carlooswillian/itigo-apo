@@ -202,7 +202,7 @@
     </div>
   </div>
 
-  <!-- Modal de Carregamento Genérico (Excluindo / Salvando / Processando) -->
+  <!-- Modal de Carregamento Genérico -->
   <div id="modalLoading" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl flex flex-col items-center space-y-3">
       <div class="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
@@ -298,7 +298,7 @@
       carregarRoteiro();
     }
 
-    function carregarRoteiro() {
+    function carregarRoteiro(idWaypointParaFocar = null) {
       const idViagem = document.getElementById('selectViagem').value;
       const container = document.getElementById('listaWaypoints');
       container.innerHTML = '';
@@ -344,12 +344,15 @@
         return;
       }
 
+      let elementoParaFocar = null;
+
       waypoints.forEach(w => {
         const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
         const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
 
         const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition";
+        card.id = `card-wp-${w.id}`;
+        card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-500";
 
         const botoesAdmin = userPin ? `
           <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
@@ -400,9 +403,23 @@
           </div>
         `;
         container.appendChild(card);
+
+        if (w.id === idWaypointParaFocar) {
+          elementoParaFocar = card;
+        }
       });
 
       lucide.createIcons();
+
+      if (elementoParaFocar) {
+        setTimeout(() => {
+          elementoParaFocar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          elementoParaFocar.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
+          setTimeout(() => {
+            elementoParaFocar.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
+          }, 2000);
+        }, 100);
+      }
     }
 
     function formatarData(dataStr) {
@@ -599,8 +616,9 @@
         dataHoraCombinada = dataVal + (horaVal ? `T${horaVal}` : 'T00:00');
       }
 
+      const wpIdInput = document.getElementById('wpId').value;
       const wp = {
-        id: document.getElementById('wpId').value,
+        id: wpIdInput,
         idViagem: idViagem,
         nomeViagem: nomeViagem,
         atividade: document.getElementById('wpAtividade').value,
@@ -621,6 +639,8 @@
         const res = await API({ action: 'salvarWaypoint', waypoint: wp });
         if(res.sucesso) {
           await carregarDados();
+          const idFoco = wp.id || res.idWaypointCriado;
+          carregarRoteiro(idFoco);
         }
       } finally {
         esconderLoading();
