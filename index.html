@@ -41,7 +41,7 @@
           <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nova Viagem
         </button>
       </div>
-      <select id="selectViagem" onchange="carregarRoteiro()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <select id="selectViagem" onchange="carregarRoteiroComFocoAutomatico()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="">Carregando viagens...</option>
       </select>
 
@@ -254,7 +254,7 @@
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
-      carregarRoteiro();
+      carregarRoteiroComFocoAutomatico();
       lucide.createIcons();
     }
 
@@ -295,7 +295,32 @@
         select.appendChild(opt);
       });
 
-      carregarRoteiro();
+      carregarRoteiroComFocoAutomatico();
+    }
+
+    // Função que descobre o waypoint mais próximo do horário atual e carrega o roteiro focando nele
+    function carregarRoteiroComFocoAutomatico() {
+      const idViagem = document.getElementById('selectViagem').value;
+      const waypointsViagem = appData.waypoints.filter(w => w.idViagem === idViagem && w.dataHora);
+
+      let idMaisProximo = null;
+      if (waypointsViagem.length > 0) {
+        const agora = new Date().getTime();
+        let menorDiferenca = Infinity;
+
+        waypointsViagem.forEach(w => {
+          const tempoWp = new Date(w.dataHora).getTime();
+          if (!isNaN(tempoWp)) {
+            const diferenca = Math.abs(tempoWp - agora);
+            if (diferenca < menorDiferenca) {
+              menorDiferenca = diferenca;
+              idMaisProximo = w.id;
+            }
+          }
+        });
+      }
+
+      carregarRoteiro(idMaisProximo);
     }
 
     function carregarRoteiro(idWaypointParaFocar = null) {
@@ -449,7 +474,7 @@
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
         document.getElementById('btnAddWaypoint').classList.add('hidden');
-        carregarRoteiro();
+        carregarRoteiroComFocoAutomatico();
         lucide.createIcons();
         alert("Modo de edição encerrado com sucesso.");
       } else {
@@ -493,7 +518,7 @@
           document.getElementById('inputNomeViagem').value = '';
           await carregarDados();
           document.getElementById('selectViagem').value = res.id;
-          carregarRoteiro();
+          carregarRoteiroComFocoAutomatico();
         }
       } finally {
         esconderLoading();
