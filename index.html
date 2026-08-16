@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <!-- Modal Waypoint Ajustado com Data/Hora Estilo Sheets -->
+  <!-- Modal Waypoint Completo -->
   <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center flex items-center justify-center">
       <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8 text-left inline-block align-middle relative">
@@ -101,15 +101,15 @@
         <div class="space-y-3 text-sm">
           <div>
             <label class="font-semibold text-slate-600 block mb-1">Ponto de Parada / Atividade</label>
-            <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
+            <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviews()">
           </div>
 
           <div>
             <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
-            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
+            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviews()">
           </div>
 
-          <!-- Campos de Data e Hora separados (Estilo Sheets) -->
+          <!-- Campos de Data e Hora separados -->
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="font-semibold text-slate-600 block mb-1">Data</label>
@@ -122,8 +122,8 @@
           </div>
 
           <div id="boxPreviewMaps" class="hidden space-y-2">
-            <label class="font-semibold text-slate-600 block text-xs">Pré-visualização do Local</label>
-            <div class="relative w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+            <label class="font-semibold text-slate-600 block text-xs">Pré-visualização do Local (Maps)</label>
+            <div class="relative w-full h-40 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
               <iframe 
                 id="iframeMapsPreview" 
                 class="w-full h-full border-0" 
@@ -150,9 +150,22 @@
             </div>
           </div>
 
-          <div>
-            <label class="font-semibold text-slate-600 block mb-1">Foto do Lugar (URL da Imagem)</label>
-            <input type="url" id="wpLinkFoto" placeholder="https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+          <!-- Seção de Foto Ajustada com Prévia e Atalho para o Google Imagens -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="font-semibold text-slate-600 block text-xs">Foto do Lugar (URL da Imagem)</label>
+              <a id="btnPesquisarImagens" href="#" target="_blank" class="text-indigo-600 hover:text-indigo-700 text-xs font-bold flex items-center gap-1">
+                <i data-lucide="image" class="w-3.5 h-3.5"></i> Buscar no Google Imagens
+              </a>
+            </div>
+            <input type="url" id="wpLinkFoto" placeholder="https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" oninput="atualizarPreviewFoto()">
+            
+            <div id="boxPreviewFoto" class="hidden relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+              <img id="imgPreview" class="w-full h-full object-cover" alt="Prévia da foto" onerror="this.src=''; document.getElementById('erroFoto').classList.remove('hidden');">
+              <div id="erroFoto" class="hidden absolute inset-0 bg-slate-900/60 text-white text-xs flex items-center justify-center font-medium p-2 text-center">
+                Não foi possível carregar a imagem com este link. Verifique se a URL termina em .jpg/.png ou se é um link direto válido.
+              </div>
+            </div>
           </div>
 
           <div>
@@ -377,7 +390,6 @@
 
     function formatarData(dataStr) {
       if(!dataStr) return '';
-      // Se veio no formato novo separado (YYYY-MM-DDTHH:MM)
       const d = new Date(dataStr);
       if (isNaN(d.getTime())) return dataStr;
       return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -444,7 +456,6 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
-        // Trata a separação da data e hora vindas da base
         if (wp.dataHora) {
           const partes = wp.dataHora.split('T');
           document.getElementById('wpData').value = partes[0] || '';
@@ -473,11 +484,16 @@
         document.getElementById('wpObservacoes').value = '';
       }
       
-      atualizarPreviewMaps();
+      atualizarPreviews();
       document.getElementById('modalWaypoint').classList.remove('hidden'); 
     }
     
     function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
+
+    function atualizarPreviews() {
+      atualizarPreviewMaps();
+      atualizarPreviewFoto();
+    }
 
     function atualizarPreviewMaps() {
       const atividade = document.getElementById('wpAtividade').value.trim();
@@ -502,12 +518,34 @@
       }
     }
 
+    function atualizarPreviewFoto() {
+      const atividade = document.getElementById('wpAtividade').value.trim();
+      const cidade = document.getElementById('wpCidade').value.trim();
+      const linkFoto = document.getElementById('wpLinkFoto').value.trim();
+      const boxFoto = document.getElementById('boxPreviewFoto');
+      const imgPreview = document.getElementById('imgPreview');
+      const erroFoto = document.getElementById('erroFoto');
+      const btnPesquisarImagens = document.getElementById('btnPesquisarImagens');
+
+      // Atualiza link de busca do Google Imagens
+      const termoBuscaImg = encodeURIComponent(`${atividade} ${cidade} turismo`.trim());
+      btnPesquisarImagens.href = `https://www.google.com/search?q=${termoBuscaImg}&tbm=isch`;
+
+      if (linkFoto) {
+        erroFoto.classList.add('hidden');
+        imgPreview.src = linkFoto;
+        boxFoto.classList.remove('hidden');
+      } else {
+        boxFoto.classList.add('hidden');
+        imgPreview.src = '';
+      }
+    }
+
     async function salvarWaypoint() {
       const idViagem = document.getElementById('selectViagem').value;
       const selectViagemEl = document.getElementById('selectViagem');
       const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
 
-      // Junta o valor do input date e do input time em formato padrão unificado
       const dataVal = document.getElementById('wpData').value;
       const horaVal = document.getElementById('wpHora').value;
       let dataHoraCombinada = '';
