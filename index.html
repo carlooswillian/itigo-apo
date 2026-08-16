@@ -55,7 +55,7 @@
           <span id="totalPago" class="text-sm font-extrabold text-emerald-700">R$ 0</span>
         </div>
         <div class="bg-amber-50 p-2.5 rounded-xl">
-          <span class="block text-[10px] font-bold text-amber-600 uppercase">Falta</span>
+          <span class="block text-[10px] font-bold text-amber-600 uppercase">Diferença</span>
           <span id="totalFalta" class="text-sm font-extrabold text-amber-700">R$ 0</span>
         </div>
       </div>
@@ -339,7 +339,7 @@
         localStorage.removeItem('itigo_pin');
         localStorage.removeItem('itigo_timestamp');
         
-        document.getElementById('txtAdmin').textContent = "Modo Leitura";
+        document.getElementById('txtAdmin').textContent = "Modo Edição";
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
         document.getElementById('btnAddWaypoint').classList.add('hidden');
