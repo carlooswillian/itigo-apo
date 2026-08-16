@@ -115,12 +115,13 @@
 
         <div id="boxPreviewMaps" class="hidden space-y-2">
           <label class="font-semibold text-slate-600 block text-xs">Pré-visualização do Local</label>
-          <div class="relative w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+          <div class="relative w-full h-56 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
             <iframe 
               id="iframeMapsPreview" 
               class="w-full h-full border-0" 
               loading="lazy" 
-              allowfullscreen>
+              allowfullscreen
+              style="touch-action: pan-x pan-y pinch-zoom; pointer-events: auto;">
             </iframe>
           </div>
           <div class="flex justify-end">
