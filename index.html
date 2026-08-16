@@ -389,12 +389,18 @@
     }
 
     function formatarData(dataStr) {
-      if(!dataStr) return '';
+      if (!dataStr) return '';
       const str = String(dataStr);
+      
       if (str.includes('T')) {
         const partes = str.split('T');
         const dataPart = partes[0];
-        const horaPart = partes[1] ? partes[1].substring(0, 5) : '';
+        let horaPart = partes[1] ? partes[1].substring(0, 5) : '';
+        
+        if (horaPart) {
+          horaPart = horaPart.replace(/[Z+-].*/, '');
+        }
+
         const [ano, mes, dia] = dataPart.split('-');
         if (ano && mes && dia) {
           return `${dia}/${mes}/${ano}${horaPart ? ' às ' + horaPart : ''}`;
