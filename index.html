@@ -298,7 +298,6 @@
       carregarRoteiroComFocoAutomatico();
     }
 
-    // Função que descobre o waypoint mais próximo do horário atual e carrega o roteiro focando nele
     function carregarRoteiroComFocoAutomatico() {
       const idViagem = document.getElementById('selectViagem').value;
       const waypointsViagem = appData.waypoints.filter(w => w.idViagem === idViagem && w.dataHora);
@@ -680,6 +679,7 @@
         const res = await API({ action: 'excluirWaypoint', idWaypoint: idWaypoint });
         if (res.sucesso) {
           await carregarDados();
+          carregarRoteiro(); // Mantém a posição atual da tela sem focar automaticamente em outro item
         } else {
           alert(res.mensagem || "Erro ao excluir waypoint.");
         }
@@ -706,6 +706,7 @@
         const res = await API({ action: 'atualizarPagamento', idWaypoint: id, valorPago: val, statusPago: 'Sim' });
         if(res.sucesso) {
           await carregarDados();
+          carregarRoteiro(id); // Foca no waypoint que teve o pagamento atualizado
         }
       } finally {
         esconderLoading();
