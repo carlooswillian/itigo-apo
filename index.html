@@ -392,8 +392,9 @@
       if (!dataStr) return '';
       const str = String(dataStr);
       
-      if (str.includes('T')) {
-        const partes = str.split('T');
+      if (str.includes('T') || str.includes(' ')) {
+        const separador = str.includes('T') ? 'T' : ' ';
+        const partes = str.split(separador);
         const dataPart = partes[0];
         let horaPart = partes[1] ? partes[1].substring(0, 5) : '';
         
