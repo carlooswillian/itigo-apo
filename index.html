@@ -464,10 +464,10 @@
         </button>
       ` : '';
 
-      // Bloco de data/hora interno caso o card seja único no horário
+      // Bloco de data/hora interno em tom neutro (caso o card seja único no horário)
       const dataHoraHtml = (isUnico && w.dataHora) ? `
-        <div class="flex items-center gap-1 text-[11px] text-indigo-600 font-bold mb-1">
-          <i data-lucide="clock" class="w-3 h-3"></i>
+        <div class="flex items-center gap-1 text-[11px] text-slate-500 font-medium mt-1">
+          <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i>
           <span>${formatarData(w.dataHora)}</span>
         </div>
       ` : '';
@@ -479,9 +479,11 @@
             <div class="p-4 space-y-2">
               <div class="flex justify-between items-start gap-2">
                 <div class="min-w-0 flex-1">
-                  <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
+                  <h3 class="font-bold text-slate-900 text-base leading-snug break-words">${w.atividade}</h3>
+                  <div class="mt-1">
+                    <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
+                  </div>
                   ${dataHoraHtml}
-                  <h3 class="font-bold text-slate-900 text-base mt-1 leading-snug break-words">${w.atividade}</h3>
                 </div>
                 <div class="flex items-center gap-1 flex-shrink-0">
                   ${temCidade ? `
