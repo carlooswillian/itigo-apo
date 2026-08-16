@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <!-- Modal Waypoint Completo e Ajustado -->
+  <!-- Modal Waypoint Ajustado com Data/Hora Estilo Sheets -->
   <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center flex items-center justify-center">
       <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8 text-left inline-block align-middle relative">
@@ -104,14 +104,20 @@
             <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
           </div>
 
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
+            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
+          </div>
+
+          <!-- Campos de Data e Hora separados (Estilo Sheets) -->
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
-              <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
+              <label class="font-semibold text-slate-600 block mb-1">Data</label>
+              <input type="date" id="wpData" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
             </div>
             <div>
-              <label class="font-semibold text-slate-600 block mb-1">Data e Hora</label>
-              <input type="datetime-local" id="wpDataHora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+              <label class="font-semibold text-slate-600 block mb-1">Horário</label>
+              <input type="time" id="wpHora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
             </div>
           </div>
 
@@ -371,7 +377,9 @@
 
     function formatarData(dataStr) {
       if(!dataStr) return '';
+      // Se veio no formato novo separado (YYYY-MM-DDTHH:MM)
       const d = new Date(dataStr);
+      if (isNaN(d.getTime())) return dataStr;
       return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
@@ -435,7 +443,17 @@
         document.getElementById('wpId').value = wp.id || '';
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
-        document.getElementById('wpDataHora').value = wp.dataHora || '';
+        
+        // Trata a separação da data e hora vindas da base
+        if (wp.dataHora) {
+          const partes = wp.dataHora.split('T');
+          document.getElementById('wpData').value = partes[0] || '';
+          document.getElementById('wpHora').value = partes[1] || '';
+        } else {
+          document.getElementById('wpData').value = '';
+          document.getElementById('wpHora').value = '';
+        }
+
         document.getElementById('wpValorEstimado').value = wp.valorEstimado || '';
         document.getElementById('wpValorPago').value = wp.valorPago || '';
         document.getElementById('wpLinkFoto').value = wp.linkFoto || '';
@@ -446,7 +464,8 @@
         document.getElementById('wpId').value = '';
         document.getElementById('wpAtividade').value = '';
         document.getElementById('wpCidade').value = '';
-        document.getElementById('wpDataHora').value = '';
+        document.getElementById('wpData').value = '';
+        document.getElementById('wpHora').value = '';
         document.getElementById('wpValorEstimado').value = '';
         document.getElementById('wpValorPago').value = '';
         document.getElementById('wpLinkFoto').value = '';
@@ -477,22 +496,6 @@
         }
         btnTestar.href = urlMaps;
         box.classList.remove('hidden');
-
-        // Libera os gestos de toque no iframe (zoom e pan) para mobile sem travar a rolagem da página
-        iframe.onload = () => {
-          try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            if (iframeDoc) {
-              iframeDoc.addEventListener('touchstart', (e) => {
-                if (e.touches.length >= 2) {
-                  e.stopPropagation();
-                }
-              }, { passive: true });
-            }
-          } catch (err) {
-            // Tratamento caso o navegador restrinja acesso direto ao documento do iframe cross-origin
-          }
-        };
       } else {
         box.classList.add('hidden');
         iframe.src = '';
@@ -504,13 +507,21 @@
       const selectViagemEl = document.getElementById('selectViagem');
       const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
 
+      // Junta o valor do input date e do input time em formato padrão unificado
+      const dataVal = document.getElementById('wpData').value;
+      const horaVal = document.getElementById('wpHora').value;
+      let dataHoraCombinada = '';
+      if (dataVal) {
+        dataHoraCombinada = dataVal + (horaVal ? `T${horaVal}` : 'T00:00');
+      }
+
       const wp = {
         id: document.getElementById('wpId').value,
         idViagem: idViagem,
         nomeViagem: nomeViagem,
         atividade: document.getElementById('wpAtividade').value,
         cidade: document.getElementById('wpCidade').value,
-        dataHora: document.getElementById('wpDataHora').value,
+        dataHora: dataHoraCombinada,
         valorEstimado: parseFloat(document.getElementById('wpValorEstimado').value) || 0,
         valorPago: parseFloat(document.getElementById('wpValorPago').value) || 0,
         linkFoto: document.getElementById('wpLinkFoto').value,
