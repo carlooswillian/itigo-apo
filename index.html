@@ -389,8 +389,13 @@
 
     function formatarData(dataStr) {
       if(!dataStr) return '';
-      // Lê puramente a string do banco (ex: 2026-08-26 11:30) sem conversão de fuso
-      const limpa = String(dataStr).trim().replace('T', ' ');
+      // Remove qualquer formatação de data ISO e extrai a string pura do banco
+      let limpa = String(dataStr).trim();
+      if (limpa.includes('T')) {
+        limpa = limpa.replace('T', ' ');
+      }
+      // Se vier no formato ISO completo com fuso (ex: 2026-08-26T11:30:00.000Z), removemos a conversão e tratamos se necessário, 
+      // mas como o banco está salvando "2026-08-26 11:30", pegamos estritamente os pedaços por texto:
       const partes = limpa.split(' ');
       if (partes.length >= 2) {
         const dataPartes = partes[0].split('-');
@@ -463,12 +468,30 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
-        // Tratamento puro da string do banco (ex: "2026-08-26 11:30")
+        // Tratamento estritamente por texto para ignorar conversões de fuso do JS
         if (wp.dataHora) {
-          const limpa = String(wp.dataHora).trim().replace('T', ' ');
-          const partes = limpa.split(' ');
-          document.getElementById('wpData').value = partes[0] || '';
-          document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
+          let limpa = String(wp.dataHora).trim().replace('T', ' ');
+          // Se o Apps Script entregou como string de data completa com fuso (ex: GMT-0300), limpamos para pegar só a data e hora locais
+          if (limpa.includes('GMT')) {
+            const dObj = new Date(wp.dataHora);
+            if (!isNaN(dObj.getTime())) {
+              const ano = dObj.getFullYear();
+              const mes = String(dObj.getMonth() + 1).padStart(2, '0');
+              const dia = String(dObj.getDate()).padStart(2, '0');
+              const hora = String(dObj.getHours()).padStart(2, '0');
+              const min = String(dObj.getMinutes()).padStart(2, '0');
+              document.getElementById('wpData').value = `${ano}-${mes}-${dia}`;
+              document.getElementById('wpHora').value = `${hora}:${min}`;
+            } else {
+              const partes = limpa.split(' ');
+              document.getElementById('wpData').value = partes[0] || '';
+              document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
+            }
+          } else {
+            const partes = limpa.split(' ');
+            document.getElementById('wpData').value = partes[0] || '';
+            document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
+          }
         } else {
           document.getElementById('wpData').value = '';
           document.getElementById('wpHora').value = '';
