@@ -390,24 +390,20 @@
 
     function formatarData(dataStr) {
       if (!dataStr) return '';
-      const str = String(dataStr);
-      
-      if (str.includes('T') || str.includes(' ')) {
-        const separador = str.includes('T') ? 'T' : ' ';
-        const partes = str.split(separador);
-        const dataPart = partes[0];
-        let horaPart = partes[1] ? partes[1].substring(0, 5) : '';
-        
-        if (horaPart) {
-          horaPart = horaPart.replace(/[Z+-].*/, '');
-        }
+      const data = new Date(dataStr);
+      if (isNaN(data.getTime())) return dataStr;
 
-        const [ano, mes, dia] = dataPart.split('-');
-        if (ano && mes && dia) {
-          return `${dia}/${mes}/${ano}${horaPart ? ' às ' + horaPart : ''}`;
-        }
-      }
-      return dataStr;
+      // Subtrai 3 horas forçadamente (3 * 60 * 60 * 1000 milissegundos) para corrigir o deslocamento de fuso
+      const dataCorrigida = new Date(data.getTime() - (3 * 60 * 60 * 1000));
+
+      const dia = String(dataCorrigida.getUTCDate()).padStart(2, '0');
+      const mes = String(dataCorrigida.getUTCMonth() + 1).padStart(2, '0');
+      const ano = dataCorrigida.getUTCFullYear();
+      
+      const hora = String(dataCorrigida.getUTCHours()).padStart(2, '0');
+      const min = String(dataCorrigida.getUTCMinutes()).padStart(2, '0');
+
+      return `${dia}/${mes}/${ano} às ${hora}:${min}`;
     }
 
     function toggleModoEdicao() {
