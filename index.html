@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ItiGo</title>
 
-  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -15,13 +14,10 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
 
-  <!-- Configuração da API do Apps Script -->
   <script>
-    // Substitua pela sua URL gerada no Google Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvlltkuspMMfkpbSbHXujbKBYKVJ-AMSSBURae5RUP0qaLmvM97N2LJg5xdynfdKS1/exec";
   </script>
 
-  <!-- Header -->
   <header class="sticky top-0 z-40 glass border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
     <div class="flex items-center gap-2">
       <div class="bg-indigo-600 text-white p-2 rounded-xl shadow">
@@ -36,10 +32,8 @@
     </button>
   </header>
 
-  <!-- Main Content -->
   <main class="max-w-md mx-auto p-4 space-y-4">
 
-    <!-- Seletor de Viagem -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
       <div class="flex items-center justify-between">
         <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Viagem Selecionada</label>
@@ -51,7 +45,6 @@
         <option value="">Carregando viagens...</option>
       </select>
 
-      <!-- Resumo Financeiro Card -->
       <div id="cardFinanceiro" class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
         <div class="bg-slate-50 p-2.5 rounded-xl">
           <span class="block text-[10px] font-bold text-slate-400 uppercase">Estimado</span>
@@ -68,19 +61,15 @@
       </div>
     </div>
 
-    <!-- Lista de Waypoints / Roteiro -->
     <div class="space-y-3" id="listaWaypoints">
-      <!-- Inserido dinamicamente via JS -->
-    </div>
+      </div>
 
   </main>
 
-  <!-- Botão Flutuante Adicionar Waypoint (Somente Admin) -->
   <button id="btnAddWaypoint" onclick="abrirModalWaypoint()" class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 active:scale-90 transition z-30">
     <i data-lucide="plus" class="w-6 h-6"></i>
   </button>
 
-  <!-- Modal PIN -->
   <div id="modalPin" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
       <h3 class="font-bold text-slate-900 text-center text-lg">Digite o PIN</h3>
@@ -92,7 +81,6 @@
     </div>
   </div>
 
-  <!-- Modal Nova Viagem -->
   <div id="modalViagem" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
       <h3 class="font-bold text-slate-900 text-lg">Nova Viagem</h3>
@@ -104,7 +92,6 @@
     </div>
   </div>
 
-  <!-- Modal Adicionar / Editar Waypoint -->
   <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8">
       <h3 id="tituloModalWp" class="font-bold text-slate-900 text-lg">Novo Waypoint</h3>
@@ -127,22 +114,15 @@
           </div>
         </div>
 
-        <!-- Mini Mapa Interativo Expandido e Livre (Sem Bloqueio Inicial) -->
         <div id="boxPreviewMaps" class="hidden space-y-2">
           <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
             <div class="flex items-center gap-2 overflow-hidden">
               <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600 shrink-0"></i>
-              <span id="txtLinkMapsPreview" class="text-xs text-indigo-700 truncate font-medium">Link gerado automaticamente</span>
+              <span id="txtLinkMapsPreview" class="text-xs text-indigo-700 truncate font-medium">Localização pronta</span>
             </div>
-            <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0">Abrir Maps</a>
-          </div>
-
-          <!-- Container do Mapa com altura maior (h-80) e liberado para toque direto -->
-          <div id="mapContainer" class="relative w-full h-80 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
-            <iframe id="iframeMapaPreview" src="" class="w-full h-full border-0 pointer-events-auto" allowfullscreen="" loading="lazy"></iframe>
-          </div>
-          <div class="flex justify-between items-center px-1">
-            <span class="text-[10px] text-slate-400">Mapa totalmente interativo (use dois dedos para mover no celular).</span>
+            <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0 flex items-center gap-1.5 shadow-sm transition">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Maps
+            </a>
           </div>
         </div>
 
@@ -180,7 +160,6 @@
     </div>
   </div>
 
-  <!-- Modal Lançar Pagamento Rápido -->
   <div id="modalPagamento" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
       <h3 class="font-bold text-slate-900 text-lg">Registrar Pagamento</h3>
@@ -196,7 +175,6 @@
     </div>
   </div>
 
-  <!-- Scripts JavaScript -->
   <script>
     let appData = { viagens: [], waypoints: [] };
     let userPin = null;
@@ -283,7 +261,7 @@
                 <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Ponto de Parada'}</span>
                 <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
               </div>
-              <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
+              <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
                 <i data-lucide="map-pin" class="w-5 h-5"></i>
               </a>
             </div>
@@ -385,34 +363,29 @@
       document.getElementById('wpLinkMidia').value = '';
       document.getElementById('wpObservacoes').value = '';
       document.getElementById('boxPreviewMaps').classList.add('hidden');
-      document.getElementById('iframeMapaPreview').src = '';
       
       document.getElementById('modalWaypoint').classList.remove('hidden'); 
     }
     
     function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
 
-    // Geração automática do link e mini mapa interativo (sem bloqueios)
+    // Atualização limpa do link dinâmico para o Maps
     function atualizarPreviewMaps() {
       const atividade = document.getElementById('wpAtividade').value.trim();
       const cidade = document.getElementById('wpCidade').value.trim();
       const box = document.getElementById('boxPreviewMaps');
       const txt = document.getElementById('txtLinkMapsPreview');
       const btnTestar = document.getElementById('btnTestarMaps');
-      const iframeMapa = document.getElementById('iframeMapaPreview');
 
       if (atividade || cidade) {
         const query = encodeURIComponent(`${atividade}, ${cidade}`);
         const urlMaps = `https://www.google.com/maps/search/?api=1&query=${query}`;
-        const urlEmbed = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
-        txt.textContent = `Maps: ${atividade}${cidade ? ' - ' + cidade : ''}`;
+        txt.textContent = `${atividade}${cidade ? ' - ' + cidade : ''}`;
         btnTestar.href = urlMaps;
-        iframeMapa.src = urlEmbed;
         box.classList.remove('hidden');
       } else {
         box.classList.add('hidden');
-        iframeMapa.src = '';
       }
     }
 
