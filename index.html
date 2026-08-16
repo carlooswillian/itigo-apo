@@ -257,7 +257,14 @@
       const container = document.getElementById('listaWaypoints');
       container.innerHTML = '';
 
-      const waypoints = appData.waypoints.filter(w => w.idViagem === idViagem);
+      // Filtra e ordena os waypoints cronologicamente por data/hora
+      const waypoints = appData.waypoints
+        .filter(w => w.idViagem === idViagem)
+        .sort((a, b) => {
+          if (!a.dataHora) return 1;  // Itens sem data vão para o final
+          if (!b.dataHora) return -1;
+          return new Date(a.dataHora) - new Date(b.dataHora); // Ordem crescente (mais antigo para mais recente)
+        });
 
       let est = 0, pago = 0;
       waypoints.forEach(w => {
@@ -268,9 +275,6 @@
       document.getElementById('totalEstimado').textContent = `R$ ${est.toFixed(2)}`;
       document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
 
-      // Cálculo e formatação dinâmica da diferença (Estimado - Pago)
-      // Se Estimado = 100 e Pago = 120, a diferença é -20 (Estourou o orçamento -> Vermelho)
-      // Se Estimado = 100 e Pago = 80, a diferença é +20 (Economizou -> Verde)
       const diferenca = est - pago;
       const containerFalta = document.getElementById('containerFalta');
       const labelFalta = document.getElementById('labelFalta');
@@ -279,13 +283,11 @@
       totalFalta.textContent = `R$ ${Math.abs(diferenca).toFixed(2)}`;
 
       if (diferenca < 0) {
-        // Estourou o orçamento (Negativo) -> Vermelho
         containerFalta.className = "bg-rose-50 p-2.5 rounded-xl transition-colors";
         labelFalta.className = "block text-[10px] font-bold text-rose-600 uppercase";
         totalFalta.className = "text-sm font-extrabold text-rose-700";
         labelFalta.textContent = "Excedente";
       } else {
-        // Economizou ou zerado (Positivo) -> Verde
         containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
         labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
         totalFalta.className = "text-sm font-extrabold text-emerald-700";
