@@ -10,7 +10,6 @@
 
   <style>
     .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
-    /* Classes auxiliares para o carrossel horizontal */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
@@ -388,32 +387,24 @@
         const blocoDiv = document.createElement('div');
         blocoDiv.className = "space-y-2";
 
-        // Cabeçalho unificado do horário se houver data/hora
-        if (primeiroWp.dataHora) {
+        // O cabeçalho com horário SÓ APARECE se houver mais de um item duplicado no mesmo horário
+        if (itensDoHorario.length > 1 && primeiroWp.dataHora) {
           const headerOpcoes = document.createElement('div');
-          headerOpcoes.className = "flex items-center justify-between text-xs text-indigo-600 font-bold px-1";
-          
-          const infoOpcoes = itensDoHorario.length > 1 
-            ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px]">Arraste para ver as ${itensDoHorario.length} opções &rarr;</span>` 
-            : '';
-
+          headerOpcoes.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
           headerOpcoes.innerHTML = `
-            <div class="flex items-center gap-1.5">
-              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-              <span>${formatarData(primeiroWp.dataHora)}</span>
-            </div>
-            ${infoOpcoes}
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+            <span>${formatarData(primeiroWp.dataHora)}</span>
           `;
           blocoDiv.appendChild(headerOpcoes);
         }
 
-        // Se houver mais de um item, criamos o container de carrossel horizontal
+        // Se houver mais de um item, criamos o carrossel horizontal
         if (itensDoHorario.length > 1) {
           const carrosselDiv = document.createElement('div');
           carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 pt-1";
 
-          itensDoHorario.forEach((w, index) => {
-            const cardHtml = criarCardHTML(w, index, itensDoHorario.length);
+          itensDoHorario.forEach((w) => {
+            const cardHtml = criarCardHTML(w);
             const cardWrapper = document.createElement('div');
             cardWrapper.id = `card-wp-${w.id}`;
             cardWrapper.className = "w-[85%] sm:w-[320px] flex-shrink-0 snap-start transition-all duration-300";
@@ -427,9 +418,9 @@
 
           blocoDiv.appendChild(carrosselDiv);
         } else {
-          // Apenas um item normal
+          // Apenas um item normal (sem cabeçalho de horário e sem carrossel)
           const w = itensDoHorario[0];
-          const cardHtml = criarCardHTML(w, 0, 1);
+          const cardHtml = criarCardHTML(w);
           const cardWrapper = document.createElement('div');
           cardWrapper.id = `card-wp-${w.id}`;
           cardWrapper.className = "transition-all duration-300";
@@ -457,15 +448,9 @@
       }
     }
 
-    // Função auxiliar para gerar o HTML do card individual
-    function criarCardHTML(w, index, totalOpcoes) {
+    // Função auxiliar para gerar o HTML do card limpo (sem selo de opção)
+    function criarCardHTML(w) {
       const temCidade = w.cidade && w.cidade.trim() !== "";
-
-      const seloOpcao = totalOpcoes > 1 ? `
-        <span class="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full z-10 shadow flex items-center gap-1">
-          <i data-lucide="layers" class="w-3 h-3 text-indigo-400"></i> Opção ${index + 1} de ${totalOpcoes}
-        </span>
-      ` : '';
 
       const botoesAdmin = userPin ? `
         <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
@@ -481,7 +466,6 @@
       return `
         <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 relative h-full flex flex-col justify-between">
           <div>
-            ${seloOpcao}
             ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
             <div class="p-4 space-y-2">
               <div class="flex justify-between items-start">
@@ -499,8 +483,6 @@
                 </div>
               </div>
 
-              ${totalOpcoes === 1 && w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
-              
               ${w.observacoes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${w.observacoes}</p>` : ''}
             </div>
           </div>
@@ -774,7 +756,6 @@
     function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
 
     async function confirmarPagamentoRapido() {
-      const id = document.getElementById('pagWpId0') || document.getElementById('pagWpId').value; // Garantia de compatibilidade
       const realId = document.getElementById('pagWpId').value;
       const val = parseFloat(document.getElementById('pagValorInput').value) || 0;
 
