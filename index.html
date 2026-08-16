@@ -61,7 +61,7 @@
       </div>
     </div>
 
-    <div class="space-y-3" id="listaWaypoints"></div>
+    <div class="space-y-4" id="listaWaypoints"></div>
 
   </main>
 
@@ -368,70 +368,111 @@
         return;
       }
 
+      // Agrupar waypoints pela mesma dataHora
+      const gruposPorHorario = {};
+      waypoints.forEach(w => {
+        const chave = w.dataHora ? w.dataHora : `sem_data_${Math.random()}`;
+        if (!gruposPorHorario[chave]) {
+          gruposPorHorario[chave] = [];
+        }
+        gruposPorHorario[chave].push(w);
+      });
+
       let elementoParaFocar = null;
 
-      waypoints.forEach(w => {
-        const temCidade = w.cidade && w.cidade.trim() !== "";
+      // Renderizar blocos agrupados
+      Object.keys(gruposPorHorario).forEach(chave => {
+        const itensDoHorario = gruposPorHorario[chave];
+        const primeiroWp = itensDoHorario[0];
 
-        const card = document.createElement('div');
-        card.id = `card-wp-${w.id}`;
-        card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-500";
+        const blocoDiv = document.createElement('div');
+        blocoDiv.className = "space-y-2";
 
-        const botoesAdmin = userPin ? `
-          <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
-            <button onclick='abrirModalWaypoint(${JSON.stringify(w)})' class="text-slate-500 hover:text-indigo-600 p-1.5 transition" title="Editar Waypoint">
-              <i data-lucide="pencil" class="w-4 h-4"></i>
-            </button>
-            <button onclick="excluirWaypoint('${w.id}')" class="text-slate-500 hover:text-rose-600 p-1.5 transition" title="Excluir Waypoint">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-          </div>
-        ` : '';
-
-        card.innerHTML = `
-          ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
-          <div class="p-4 space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
-                <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
-              </div>
-              <div class="flex items-center gap-1">
-                ${temCidade ? `
-                  <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${w.atividade}, ${w.cidade}`)}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
-                    <i data-lucide="map-pin" class="w-5 h-5"></i>
-                  </a>
-                ` : ''}
-                ${botoesAdmin}
-              </div>
-            </div>
-
-            ${w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
-            
-            ${w.observacoes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${w.observacoes}</p>` : ''}
-
-            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <div>
-                <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
-                <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
-                <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-blue-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
-              </div>
-              
-              <div class="flex items-center gap-2">
-                ${w.linkMidia ? `<a href="${w.linkMidia}" target="_blank" class="text-rose-500 bg-rose-50 p-2 rounded-xl" title="Ver Vídeo"><i data-lucide="video" class="w-4 h-4"></i></a>` : ''}
-                
-                <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-xl border border-blue-200 hover:bg-blue-100 active:scale-95 transition">
-                  Pagar
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-
-        if (w.id === idWaypointParaFocar) {
-          elementoParaFocar = card;
+        // Se houver mais de um item no mesmo horário, criamos um cabeçalho unificado para indicar as opções
+        if (itensDoHorario.length > 1 && primeiroWp.dataHora) {
+          const headerOpcoes = document.createElement('div');
+          headerOpcoes.className = "flex items-center gap-2 text-xs text-indigo-600 font-bold px-1";
+          headerOpcoes.innerHTML = `
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+            <span>${formatarData(primeiroWp.dataHora)} <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] ml-1">${itensDoHorario.length} opções disponíveis</span></span>
+          `;
+          blocoDiv.appendChild(headerOpcoes);
         }
+
+        // Renderiza cada card de opção para este horário
+        itensDoHorario.forEach((w, index) => {
+          const temCidade = w.cidade && w.cidade.trim() !== "";
+
+          const card = document.createElement('div');
+          card.id = `card-wp-${w.id}`;
+          card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-500 relative";
+
+          // Se for opção múltipla, podemos dar um pequeno destaque visual lateral ou numeração sutil
+          const seloOpcao = itensDoHorario.length > 1 ? `
+            <span class="absolute top-2 left-2 bg-slate-900/70 backdrop-blur-md text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow">
+              Opção ${index + 1}
+            </span>
+          ` : '';
+
+          const botoesAdmin = userPin ? `
+            <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
+              <button onclick='abrirModalWaypoint(${JSON.stringify(w)})' class="text-slate-500 hover:text-indigo-600 p-1.5 transition" title="Editar Waypoint">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
+              <button onclick="excluirWaypoint('${w.id}')" class="text-slate-500 hover:text-rose-600 p-1.5 transition" title="Excluir Waypoint">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          ` : '';
+
+          card.innerHTML = `
+            ${seloOpcao}
+            ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
+            <div class="p-4 space-y-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
+                  <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
+                </div>
+                <div class="flex items-center gap-1">
+                  ${temCidade ? `
+                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${w.atividade}, ${w.cidade}`)}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
+                      <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </a>
+                  ` : ''}
+                  ${botoesAdmin}
+                </div>
+              </div>
+
+              ${itensDoHorario.length === 1 && w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
+              
+              ${w.observacoes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${w.observacoes}</p>` : ''}
+
+              <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <div>
+                  <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
+                  <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
+                  <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-blue-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  ${w.linkMidia ? `<a href="${w.linkMidia}" target="_blank" class="text-rose-500 bg-rose-50 p-2 rounded-xl" title="Ver Vídeo"><i data-lucide="video" class="w-4 h-4"></i></a>` : ''}
+                  
+                  <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-xl border border-blue-200 hover:bg-blue-100 active:scale-95 transition">
+                    Pagar
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          blocoDiv.appendChild(card);
+
+          if (w.id === idWaypointParaFocar) {
+            elementoParaFocar = card;
+          }
+        });
+
+        container.appendChild(blocoDiv);
       });
 
       lucide.createIcons();
