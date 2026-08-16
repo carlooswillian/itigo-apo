@@ -202,6 +202,14 @@
     </div>
   </div>
 
+  <!-- Modal de Carregamento (Excluindo / Processando) -->
+  <div id="modalLoading" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl flex flex-col items-center space-y-3">
+      <div class="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
+      <p id="txtLoading" class="font-bold text-slate-800 text-base">Excluindo...</p>
+    </div>
+  </div>
+
   <script>
     let appData = { viagens: [], waypoints: [] };
     let userPin = null;
@@ -213,6 +221,15 @@
       verificarPinSalvo();
       carregarDados();
     };
+
+    function mostrarLoading(texto = "Excluindo...") {
+      document.getElementById('txtLoading').textContent = texto;
+      document.getElementById('modalLoading').classList.remove('hidden');
+    }
+
+    function esconderLoading() {
+      document.getElementById('modalLoading').classList.add('hidden');
+    }
 
     function verificarPinSalvo() {
       const pinSalvo = localStorage.getItem('itigo_pin');
@@ -598,11 +615,17 @@
 
     async function excluirWaypoint(idWaypoint) {
       if (!confirm("Tem certeza que deseja excluir este waypoint?")) return;
-      const res = await API({ action: 'excluirWaypoint', idWaypoint: idWaypoint });
-      if (res.sucesso) {
-        await carregarDados();
-      } else {
-        alert(res.mensagem || "Erro ao excluir waypoint.");
+      
+      mostrarLoading("Excluindo...");
+      try {
+        const res = await API({ action: 'excluirWaypoint', idWaypoint: idWaypoint });
+        if (res.sucesso) {
+          await carregarDados();
+        } else {
+          alert(res.mensagem || "Erro ao excluir waypoint.");
+        }
+      } finally {
+        esconderLoading();
       }
     }
 
