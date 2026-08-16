@@ -15,7 +15,7 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZSR3uf1opKMwGW5Ywh147tSlU5-q6YDv1WUTCoQCqTitR8Q9u7i9WD61Dp7RkEuWU/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvlltkuspMMfkpbSbHXujbKBYKVJ-AMSSBURae5RUP0qaLmvM97N2LJg5xdynfdKS1/exec";
   </script>
 
   <header class="sticky top-0 z-40 glass border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
@@ -28,7 +28,7 @@
     
     <button id="btnPin" onclick="toggleModoEdicao()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
       <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500" id="iconLock"></i>
-      <span id="txtAdmin">Modo de Edição</span>
+      <span id="txtAdmin">Modo Leitura</span>
     </button>
   </header>
 
@@ -54,14 +54,15 @@
           <span class="block text-[10px] font-bold text-emerald-600 uppercase">Pago</span>
           <span id="totalPago" class="text-sm font-extrabold text-emerald-700">R$ 0</span>
         </div>
-        <div id="boxDiferencaTotal" class="bg-slate-50 p-2.5 rounded-xl">
-          <span class="block text-[10px] font-bold text-slate-400 uppercase" id="lblDiferencaTotal">Diferença</span>
-          <span id="totalDiferenca" class="text-sm font-extrabold text-slate-700">R$ 0</span>
+        <div class="bg-amber-50 p-2.5 rounded-xl">
+          <span class="block text-[10px] font-bold text-amber-600 uppercase">Falta</span>
+          <span id="totalFalta" class="text-sm font-extrabold text-amber-700">R$ 0</span>
         </div>
       </div>
     </div>
 
-    <div class="space-y-3" id="listaWaypoints"></div>
+    <div class="space-y-3" id="listaWaypoints">
+      </div>
 
   </main>
 
@@ -69,46 +70,126 @@
     <i data-lucide="plus" class="w-6 h-6"></i>
   </button>
 
-  <!-- Modais Omitidos para brevidade, mantêm a mesma estrutura que você já possui -->
-  
+  <div id="modalPin" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
+      <h3 class="font-bold text-slate-900 text-center text-lg">Digite o PIN</h3>
+      <input type="password" id="inputPin" maxlength="6" class="w-full text-center text-2xl font-bold tracking-widest bg-slate-100 border border-slate-200 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••">
+      <div class="flex gap-2">
+        <button onclick="fecharModalPin()" class="w-1/2 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="confirmarPin()" class="w-1/2 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl shadow">Acessar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalViagem" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+      <h3 class="font-bold text-slate-900 text-lg">Nova Viagem</h3>
+      <input type="text" id="inputNomeViagem" placeholder="Ex: interior de SP/Minas (Capitólio)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <div class="flex gap-2 justify-end">
+        <button onclick="fecharModalViagem()" class="px-4 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="salvarViagem()" class="px-4 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl shadow">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8">
+      <h3 id="tituloModalWp" class="font-bold text-slate-900 text-lg">Novo Waypoint</h3>
+      <input type="hidden" id="wpId">
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Ponto de Parada / Atividade</label>
+          <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
+            <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviewMaps()">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Data e Hora</label>
+            <input type="datetime-local" id="wpDataHora" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+          </div>
+        </div>
+
+        <div id="boxPreviewMaps" class="hidden space-y-2">
+          <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+              <span id="txtLinkMapsPreview" class="text-xs text-indigo-700 truncate font-medium">Localização pronta</span>
+            </div>
+            <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0 flex items-center gap-1.5 shadow-sm transition">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Maps
+            </a>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Valor Estimado (R$)</label>
+            <input type="number" step="0.01" id="wpValorEstimado" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-600 block mb-1">Valor Pago (R$)</label>
+            <input type="number" step="0.01" id="wpValorPago" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Foto do Lugar (URL da Imagem)</label>
+          <input type="url" id="wpLinkFoto" placeholder="https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Link de Vídeo / Mídia (Insta, YT)</label>
+          <input type="url" id="wpLinkMidia" placeholder="https://instagram.com/..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-600 block mb-1">Observações</label>
+          <textarea id="wpObservacoes" rows="2" placeholder="Dicas de prato, horário ideal..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-2 justify-end pt-2 border-t">
+        <button onclick="fecharModalWaypoint()" class="px-4 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="salvarWaypoint()" class="px-4 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl shadow">Salvar Waypoint</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalPagamento" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
+      <h3 class="font-bold text-slate-900 text-lg">Registrar Pagamento</h3>
+      <input type="hidden" id="pagWpId">
+      <div>
+        <label class="text-xs font-semibold text-slate-500">Valor Pago Agora (R$)</label>
+        <input type="number" step="0.01" id="pagValorInput" class="w-full text-xl font-bold bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="fecharModalPagamento()" class="w-1/2 py-2.5 text-slate-500 font-semibold text-sm">Cancelar</button>
+        <button onclick="confirmarPagamentoRapido()" class="w-1/2 py-2.5 bg-emerald-600 text-white font-semibold text-sm rounded-xl shadow">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let appData = { viagens: [], waypoints: [] };
     let userPin = null;
 
-    const TEMPO_EXPIRACAO_PIN = 24 * 60 * 60 * 1000;
-
     window.onload = () => {
       lucide.createIcons();
-      verificarPinSalvo();
       carregarDados();
     };
 
-    function verificarPinSalvo() {
-      const pinSalvo = localStorage.getItem('itigo_pin');
-      const timestampSalvo = localStorage.getItem('itigo_timestamp');
-
-      if (pinSalvo && timestampSalvo) {
-        const agora = new Date().getTime();
-        const tempoDecorrido = agora - parseInt(timestampSalvo, 10);
-
-        if (tempoDecorrido < TEMPO_EXPIRACAO_PIN) {
-          userPin = pinSalvo;
-          ativarModoEdicaoVisual();
-        }
-      }
-    }
-
-    function ativarModoEdicaoVisual() {
-      document.getElementById('txtAdmin').textContent = "Modo de Leitura";
-      document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
-      document.getElementById('btnNovaViagem').classList.remove('hidden');
-      document.getElementById('btnAddWaypoint').classList.remove('hidden');
-      lucide.createIcons();
-    }
-
     async function API(payload) {
       if (userPin) payload.pin = userPin;
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
       return await res.json();
     }
 
@@ -119,68 +200,237 @@
           appData = res;
           renderizarSeletorViagem();
         }
-      } catch(e) { alert("Erro ao carregar dados."); }
+      } catch(e) {
+        alert("Erro ao conectar com a planilha. Verifique a URL do Script.");
+      }
+    }
+
+    function renderizarSeletorViagem() {
+      const select = document.getElementById('selectViagem');
+      select.innerHTML = '';
+
+      if (appData.viagens.length === 0) {
+        select.innerHTML = '<option value="">Nenhuma viagem encontrada</option>';
+        return;
+      }
+
+      appData.viagens.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = v.nome;
+        select.appendChild(opt);
+      });
+
+      carregarRoteiro();
     }
 
     function carregarRoteiro() {
       const idViagem = document.getElementById('selectViagem').value;
       const container = document.getElementById('listaWaypoints');
       container.innerHTML = '';
+
       const waypoints = appData.waypoints.filter(w => w.idViagem === idViagem);
 
       let est = 0, pago = 0;
-      waypoints.forEach(w => { est += w.valorEstimado; pago += w.valorPago; });
-
-      const diferencaTotal = pago - est;
-      const boxDifTotal = document.getElementById('boxDiferencaTotal');
-      const lblDifTotal = document.getElementById('lblDiferencaTotal');
-      const valDifTotal = document.getElementById('totalDiferenca');
+      waypoints.forEach(w => {
+        est += w.valorEstimado;
+        pago += w.valorPago;
+      });
 
       document.getElementById('totalEstimado').textContent = `R$ ${est.toFixed(2)}`;
       document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
-      valDifTotal.textContent = `R$ ${Math.abs(diferencaTotal).toFixed(2)}`;
+      document.getElementById('totalFalta').textContent = `R$ ${(est - pago).toFixed(2)}`;
 
-      if (diferencaTotal > 0) {
-        boxDifTotal.className = "bg-rose-50 p-2.5 rounded-xl";
-        valDifTotal.className = "text-sm font-extrabold text-rose-700";
-      } else if (diferencaTotal < 0) {
-        boxDifTotal.className = "bg-emerald-50 p-2.5 rounded-xl";
-        valDifTotal.className = "text-sm font-extrabold text-emerald-700";
+      if (waypoints.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium text-sm">Nenhum ponto adicionado a esta viagem.</div>`;
+        return;
       }
 
       waypoints.forEach(w => {
-        const diffWp = w.valorPago - w.valorEstimado;
-        // ... (resto do render do card)
+        const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
+        const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition";
+
+        card.innerHTML = `
+          ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
+          <div class="p-4 space-y-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Ponto de Parada'}</span>
+                <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
+              </div>
+              <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
+                <i data-lucide="map-pin" class="w-5 h-5"></i>
+              </a>
+            </div>
+
+            ${w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
+            
+            ${w.observacoes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${w.observacoes}</p>` : ''}
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <div>
+                <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
+                <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
+                <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-emerald-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                ${w.linkMidia ? `<a href="${w.linkMidia}" target="_blank" class="text-rose-500 bg-rose-50 p-2 rounded-xl" title="Ver Vídeo"><i data-lucide="video" class="w-4 h-4"></i></a>` : ''}
+                
+                <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-200 hover:bg-emerald-100 active:scale-95 transition">
+                  Pagar
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
       });
+
       lucide.createIcons();
     }
 
-    // CORREÇÃO APLICADA AQUI
-    async function salvarWaypoint() {
-      const idViagem = document.getElementById('selectViagem').value;
-      const wp = {
-        idViagem: idViagem,
-        atividade: document.getElementById('wpAtividade').value,
-        cidade: document.getElementById('wpCidade').value,
-        dataHora: document.getElementById('wpDataHora').value, // <--- AQUI ESTAVA O COLCHETE ERRADO
-        valorEstimado: parseFloat(document.getElementById('wpValorEstimado').value) || 0,
-        valorPago: parseFloat(document.getElementById('wpValorPago').value) || 0
-        // ... outros campos
-      };
-      
-      const res = await API({ action: 'salvarWaypoint', waypoint: wp });
-      if(res.sucesso) { fecharModalWaypoint(); await carregarDados(); }
+    function formatarData(dataStr) {
+      if(!dataStr) return '';
+      const d = new Date(dataStr);
+      return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
+    // Controle de Modo Edição / PIN
     function toggleModoEdicao() {
       if (userPin) {
         userPin = null;
-        localStorage.removeItem('itigo_pin');
-        document.getElementById('txtAdmin').textContent = "Modo de Edição";
+        document.getElementById('txtAdmin').textContent = "Modo Leitura";
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
-        location.reload();
+        document.getElementById('btnNovaViagem').classList.add('hidden');
+        document.getElementById('btnAddWaypoint').classList.add('hidden');
+        lucide.createIcons();
+        alert("Modo de edição encerrado com sucesso.");
       } else {
-        document.getElementById('modalPin').classList.remove('hidden');
+        abrirModalPin();
+      }
+    }
+
+    function abrirModalPin() { document.getElementById('modalPin').classList.remove('hidden'); }
+    function fecharModalPin() { document.getElementById('modalPin').classList.add('hidden'); }
+
+    async function confirmarPin() {
+      const pin = document.getElementById('inputPin').value;
+      const res = await API({ action: 'validarPin', pin: pin });
+      if (res.sucesso) {
+        userPin = pin;
+        document.getElementById('txtAdmin').textContent = "Modo Edição";
+        document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
+        document.getElementById('btnNovaViagem').classList.remove('hidden');
+        document.getElementById('btnAddWaypoint').classList.remove('hidden');
+        lucide.createIcons();
+        fecharModalPin();
+        document.getElementById('inputPin').value = '';
+      } else {
+        alert("PIN Incorreto!");
+      }
+    }
+
+    // Modal Viagem
+    function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
+    function fecharModalViagem() { document.getElementById('modalViagem').classList.add('hidden'); }
+
+    async function salvarViagem() {
+      const nome = document.getElementById('inputNomeViagem').value;
+      if(!nome) return;
+      const res = await API({ action: 'criarViagem', nomeViagem: nome });
+      if (res.sucesso) {
+        fecharModalViagem();
+        document.getElementById('inputNomeViagem').value = '';
+        await carregarDados();
+        document.getElementById('selectViagem').value = res.id;
+        carregarRoteiro();
+      }
+    }
+
+    // Modal Waypoint
+    function abrirModalWaypoint() { 
+      document.getElementById('wpId').value = '';
+      document.getElementById('wpAtividade').value = '';
+      document.getElementById('wpCidade').value = '';
+      document.getElementById('wpDataHora').value = '';
+      document.getElementById('wpValorEstimado').value = '';
+      document.getElementById('wpValorPago').value = '';
+      document.getElementById('wpLinkFoto').value = '';
+      document.getElementById('wpLinkMidia').value = '';
+      document.getElementById('wpObservacoes').value = '';
+      document.getElementById('boxPreviewMaps').classList.add('hidden');
+      
+      document.getElementById('modalWaypoint').classList.remove('hidden'); 
+    }
+    
+    function fecharModalWaypoint() { document.getElementById('modalWaypoint').classList.add('hidden'); }
+
+    // Atualização limpa do link dinâmico para o Maps
+    function atualizarPreviewMaps() {
+      const atividade = document.getElementById('wpAtividade').value.trim();
+      const cidade = document.getElementById('wpCidade').value.trim();
+      const box = document.getElementById('boxPreviewMaps');
+      const txt = document.getElementById('txtLinkMapsPreview');
+      const btnTestar = document.getElementById('btnTestarMaps');
+
+      if (atividade || cidade) {
+        const query = encodeURIComponent(`${atividade}, ${cidade}`);
+        const urlMaps = `https://www.google.com/maps/search/?api=1&query=${query}`;
+
+        txt.textContent = `${atividade}${cidade ? ' - ' + cidade : ''}`;
+        btnTestar.href = urlMaps;
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    async function salvarWaypoint() {
+      const idViagem = document.getElementById('selectViagem').value;
+      const selectViagemEl = document.getElementById('selectViagem');
+      const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
+
+      const wp = {
+        idViagem: idViagem,
+        nomeViagem: nomeViagem,
+        atividade: document.getElementById('wpAtividade').value,
+        cidade: document.getElementById('wpCidade').value,
+        dataHora: document.getElementById('wpDataHora').value,
+        valorEstimado: parseFloat(document.getElementById('wpValorEstimado').value) || 0,
+        valorPago: parseFloat(document.getElementById('wpValorPago').value) || 0,
+        linkFoto: document.getElementById('wpLinkFoto').value,
+        linkMidia: document.getElementById('wpLinkMidia').value,
+        observacoes: document.getElementById('wpObservacoes').value
+      };
+
+      const res = await API({ action: 'salvarWaypoint', waypoint: wp });
+      if(res.sucesso) {
+        abrirModalWaypoint();
+        fecharModalWaypoint();
+        await carregarDados();
+      }
+    }
+
+    // Modal Pagamento Rápido
+    function abrirModalPagamento(id, valorAtual) {
+      document.getElementById('pagWpId').value = id;
+      document.getElementById('pagValorInput').value = valorAtual;
+      document.getElementById('modalPagamento').classList.remove('hidden');
+    }
+    function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
+
+    async function confirmarPagamentoRapido() {
+      const id = document.getElementById('pagWpId').value;
+      const val = parseFloat(document.getElementById('pagValorInput').value) || 0;
+
+      const res = await API({ action: 'atualizarPagamento', idWaypoint: id, valorPago: val, statusPago: 'Sim' });
+      if(res.sucesso) {
+        fecharModalPagamento();
+        await carregarDados();
       }
     }
   </script>
