@@ -113,15 +113,11 @@
           </div>
         </div>
 
-        <div id="boxPreviewMaps" class="hidden space-y-2">
-          <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex items-center justify-between">
-            <div class="flex items-center gap-2 overflow-hidden">
-              <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600 shrink-0"></i>
-              <span id="txtLinkMapsPreview" class="text-xs text-indigo-700 truncate font-medium">Localização pronta</span>
-            </div>
-            <a id="btnTestarMaps" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0 flex items-center gap-1.5 shadow-sm transition">
-              <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Maps
-            </a>
+        <!-- Preview do Mapa Interativo no Modal -->
+        <div id="boxPreviewMaps" class="hidden space-y-1.5">
+          <label class="font-semibold text-slate-600 block text-xs">Prévia do Mapa</label>
+          <div class="w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+            <iframe id="iframePreviewMaps" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </div>
 
@@ -209,7 +205,7 @@
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
-      carregarRoteiro(); // Recarrega para exibir os botões de edição/exclusão nos cards
+      carregarRoteiro();
       lucide.createIcons();
     }
 
@@ -301,12 +297,12 @@
 
       waypoints.forEach(w => {
         const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
-        const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
+        const urlIframeMaps = `https://maps.google.com/maps?q=${query&output=embed}`.replace('&', '&amp;'); // Mantém compatibilidade com iframe
+        const urlMapsExterno = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
 
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition";
 
-        // Botões de edição/exclusão exibidos apenas se o usuário estiver autenticado (userPin ativo)
         const botoesAdmin = userPin ? `
           <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
             <button onclick='abrirModalWaypoint(${JSON.stringify(w)})' class="text-slate-500 hover:text-indigo-600 p-1.5 transition" title="Editar Waypoint">
@@ -319,7 +315,14 @@
         ` : '';
 
         card.innerHTML = `
+          <!-- Foto principal (se houver) ou Mapa Interativo direto no card -->
           ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
+          
+          <!-- Mapa interativo com tamanho ideal (h-48) para mover com 2 dedos e dar zoom -->
+          <div class="w-full h-48 bg-slate-100 border-b border-slate-100 relative">
+            <iframe width="100%" height="100%" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${queryMaps}&output=embed"></iframe>
+          </div>
+
           <div class="p-4 space-y-2">
             <div class="flex justify-between items-start">
               <div>
@@ -327,8 +330,8 @@
                 <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
               </div>
               <div class="flex items-center gap-1">
-                <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
-                  <i data-lucide="map-pin" class="w-5 h-5"></i>
+                <a href="${urlMapsExterno}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps Externo">
+                  <i data-lucide="external-link" class="w-5 h-5"></i>
                 </a>
                 ${botoesAdmin}
               </div>
@@ -456,15 +459,11 @@
       const atividade = document.getElementById('wpAtividade').value.trim();
       const cidade = document.getElementById('wpCidade').value.trim();
       const box = document.getElementById('boxPreviewMaps');
-      const txt = document.getElementById('txtLinkMapsPreview');
-      const btnTestar = document.getElementById('btnTestarMaps');
+      const iframe = document.getElementById('iframePreviewMaps');
 
       if (atividade || cidade) {
         const query = encodeURIComponent(`${atividade}, ${cidade}`);
-        const urlMaps = `https://www.google.com/maps/search/?api=1&query=${query}`;
-
-        txt.textContent = `${atividade}${cidade ? ' - ' + cidade : ''}`;
-        btnTestar.href = urlMaps;
+        iframe.src = `https://maps.google.com/maps?q=${query}&output=embed`;
         box.classList.remove('hidden');
       } else {
         box.classList.add('hidden');
