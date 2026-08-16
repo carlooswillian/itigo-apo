@@ -10,6 +10,9 @@
 
   <style>
     .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+    /* Classes auxiliares para o carrossel horizontal */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
@@ -109,7 +112,6 @@
             <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviews()">
           </div>
 
-          <!-- Campos de Data e Hora separados -->
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="font-semibold text-slate-600 block mb-1">Data</label>
@@ -150,7 +152,6 @@
             </div>
           </div>
 
-          <!-- Seção de Foto Ajustada com Prévia e Atalho para o Google Imagens -->
           <div class="space-y-2">
             <div class="flex justify-between items-center">
               <label class="font-semibold text-slate-600 block text-xs">Foto do Lugar (URL da Imagem)</label>
@@ -163,7 +164,7 @@
             <div id="boxPreviewFoto" class="hidden relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
               <img id="imgPreview" class="w-full h-full object-cover" alt="Prévia da foto" onerror="this.src=''; document.getElementById('erroFoto').classList.remove('hidden');">
               <div id="erroFoto" class="hidden absolute inset-0 bg-slate-900/60 text-white text-xs flex items-center justify-center font-medium p-2 text-center">
-                Não foi possível carregar a imagem com este link. Verifique se a URL termina em .jpg/.png ou se é um link direto válido.
+                Não foi possível carregar a imagem com este link.
               </div>
             </div>
           </div>
@@ -202,7 +203,6 @@
     </div>
   </div>
 
-  <!-- Modal de Carregamento Genérico -->
   <div id="modalLoading" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl flex flex-col items-center space-y-3">
       <div class="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
@@ -388,44 +388,99 @@
         const blocoDiv = document.createElement('div');
         blocoDiv.className = "space-y-2";
 
-        // Se houver mais de um item no mesmo horário, criamos um cabeçalho unificado para indicar as opções
-        if (itensDoHorario.length > 1 && primeiroWp.dataHora) {
+        // Cabeçalho unificado do horário se houver data/hora
+        if (primeiroWp.dataHora) {
           const headerOpcoes = document.createElement('div');
-          headerOpcoes.className = "flex items-center gap-2 text-xs text-indigo-600 font-bold px-1";
+          headerOpcoes.className = "flex items-center justify-between text-xs text-indigo-600 font-bold px-1";
+          
+          const infoOpcoes = itensDoHorario.length > 1 
+            ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px]">Arraste para ver as ${itensDoHorario.length} opções &rarr;</span>` 
+            : '';
+
           headerOpcoes.innerHTML = `
-            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-            <span>${formatarData(primeiroWp.dataHora)} <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] ml-1">${itensDoHorario.length} opções disponíveis</span></span>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              <span>${formatarData(primeiroWp.dataHora)}</span>
+            </div>
+            ${infoOpcoes}
           `;
           blocoDiv.appendChild(headerOpcoes);
         }
 
-        // Renderiza cada card de opção para este horário
-        itensDoHorario.forEach((w, index) => {
-          const temCidade = w.cidade && w.cidade.trim() !== "";
+        // Se houver mais de um item, criamos o container de carrossel horizontal
+        if (itensDoHorario.length > 1) {
+          const carrosselDiv = document.createElement('div');
+          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 pt-1";
 
-          const card = document.createElement('div');
-          card.id = `card-wp-${w.id}`;
-          card.className = "bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-500 relative";
+          itensDoHorario.forEach((w, index) => {
+            const cardHtml = criarCardHTML(w, index, itensDoHorario.length);
+            const cardWrapper = document.createElement('div');
+            cardWrapper.id = `card-wp-${w.id}`;
+            cardWrapper.className = "w-[85%] sm:w-[320px] flex-shrink-0 snap-start transition-all duration-300";
+            cardWrapper.innerHTML = cardHtml;
+            carrosselDiv.appendChild(cardWrapper);
 
-          // Se for opção múltipla, podemos dar um pequeno destaque visual lateral ou numeração sutil
-          const seloOpcao = itensDoHorario.length > 1 ? `
-            <span class="absolute top-2 left-2 bg-slate-900/70 backdrop-blur-md text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow">
-              Opção ${index + 1}
-            </span>
-          ` : '';
+            if (w.id === idWaypointParaFocar) {
+              elementoParaFocar = cardWrapper;
+            }
+          });
 
-          const botoesAdmin = userPin ? `
-            <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
-              <button onclick='abrirModalWaypoint(${JSON.stringify(w)})' class="text-slate-500 hover:text-indigo-600 p-1.5 transition" title="Editar Waypoint">
-                <i data-lucide="pencil" class="w-4 h-4"></i>
-              </button>
-              <button onclick="excluirWaypoint('${w.id}')" class="text-slate-500 hover:text-rose-600 p-1.5 transition" title="Excluir Waypoint">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </div>
-          ` : '';
+          blocoDiv.appendChild(carrosselDiv);
+        } else {
+          // Apenas um item normal
+          const w = itensDoHorario[0];
+          const cardHtml = criarCardHTML(w, 0, 1);
+          const cardWrapper = document.createElement('div');
+          cardWrapper.id = `card-wp-${w.id}`;
+          cardWrapper.className = "transition-all duration-300";
+          cardWrapper.innerHTML = cardHtml;
+          blocoDiv.appendChild(cardWrapper);
 
-          card.innerHTML = `
+          if (w.id === idWaypointParaFocar) {
+            elementoParaFocar = cardWrapper;
+          }
+        }
+
+        container.appendChild(blocoDiv);
+      });
+
+      lucide.createIcons();
+
+      if (elementoParaFocar) {
+        setTimeout(() => {
+          elementoParaFocar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          elementoParaFocar.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
+          setTimeout(() => {
+            elementoParaFocar.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
+          }, 2000);
+        }, 150);
+      }
+    }
+
+    // Função auxiliar para gerar o HTML do card individual
+    function criarCardHTML(w, index, totalOpcoes) {
+      const temCidade = w.cidade && w.cidade.trim() !== "";
+
+      const seloOpcao = totalOpcoes > 1 ? `
+        <span class="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full z-10 shadow flex items-center gap-1">
+          <i data-lucide="layers" class="w-3 h-3 text-indigo-400"></i> Opção ${index + 1} de ${totalOpcoes}
+        </span>
+      ` : '';
+
+      const botoesAdmin = userPin ? `
+        <div class="flex items-center gap-1 border-l pl-2 border-slate-200 ml-1">
+          <button onclick='abrirModalWaypoint(${JSON.stringify(w)})' class="text-slate-500 hover:text-indigo-600 p-1.5 transition" title="Editar Waypoint">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+          </button>
+          <button onclick="excluirWaypoint('${w.id}')" class="text-slate-500 hover:text-rose-600 p-1.5 transition" title="Excluir Waypoint">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      ` : '';
+
+      return `
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 relative h-full flex flex-col justify-between">
+          <div>
             ${seloOpcao}
             ${w.linkFoto ? `<img src="${w.linkFoto}" class="w-full h-36 object-cover" onerror="this.style.display='none'">` : ''}
             <div class="p-4 space-y-2">
@@ -444,48 +499,29 @@
                 </div>
               </div>
 
-              ${itensDoHorario.length === 1 && w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
+              ${totalOpcoes === 1 && w.dataHora ? `<div class="text-xs text-slate-500 flex items-center gap-1 font-medium"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${formatarData(w.dataHora)}</div>` : ''}
               
               ${w.observacoes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">${w.observacoes}</p>` : ''}
-
-              <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                <div>
-                  <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
-                  <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
-                  <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-blue-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                  ${w.linkMidia ? `<a href="${w.linkMidia}" target="_blank" class="text-rose-500 bg-rose-50 p-2 rounded-xl" title="Ver Vídeo"><i data-lucide="video" class="w-4 h-4"></i></a>` : ''}
-                  
-                  <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-xl border border-blue-200 hover:bg-blue-100 active:scale-95 transition">
-                    Pagar
-                  </button>
-                </div>
-              </div>
             </div>
-          `;
-          blocoDiv.appendChild(card);
+          </div>
 
-          if (w.id === idWaypointParaFocar) {
-            elementoParaFocar = card;
-          }
-        });
-
-        container.appendChild(blocoDiv);
-      });
-
-      lucide.createIcons();
-
-      if (elementoParaFocar) {
-        setTimeout(() => {
-          elementoParaFocar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          elementoParaFocar.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
-          setTimeout(() => {
-            elementoParaFocar.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-[1.02]');
-          }, 2000);
-        }, 150);
-      }
+          <div class="px-4 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <div>
+              <span class="text-slate-400 block text-[10px]">Estimado / Pago</span>
+              <span class="font-bold text-slate-700">R$ ${w.valorEstimado.toFixed(2)}</span> / 
+              <span class="font-extrabold ${w.valorPago >= w.valorEstimado && w.valorEstimado > 0 ? 'text-blue-600' : 'text-slate-800'}">R$ ${w.valorPago.toFixed(2)}</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              ${w.linkMidia ? `<a href="${w.linkMidia}" target="_blank" class="text-rose-500 bg-rose-50 p-2 rounded-xl" title="Ver Vídeo"><i data-lucide="video" class="w-4 h-4"></i></a>` : ''}
+              
+              <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-xl border border-blue-200 hover:bg-blue-100 active:scale-95 transition">
+                Pagar
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function formatarData(dataStr) {
@@ -738,17 +774,18 @@
     function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
 
     async function confirmarPagamentoRapido() {
-      const id = document.getElementById('pagWpId').value;
+      const id = document.getElementById('pagWpId0') || document.getElementById('pagWpId').value; // Garantia de compatibilidade
+      const realId = document.getElementById('pagWpId').value;
       const val = parseFloat(document.getElementById('pagValorInput').value) || 0;
 
       fecharModalPagamento();
       mostrarLoading("Registrando pagamento...");
 
       try {
-        const res = await API({ action: 'atualizarPagamento', idWaypoint: id, valorPago: val, statusPago: 'Sim' });
+        const res = await API({ action: 'atualizarPagamento', idWaypoint: realId, valorPago: val, statusPago: 'Sim' });
         if(res.sucesso) {
           await carregarDados();
-          carregarRoteiro(id);
+          carregarRoteiro(realId);
         }
       } finally {
         esconderLoading();
