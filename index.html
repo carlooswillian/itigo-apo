@@ -469,7 +469,6 @@
         if (wp.dataHora) {
           const data = new Date(wp.dataHora);
           if (!isNaN(data.getTime())) {
-            // Aplica a mesma correção de -3 horas para exibir corretamente no input do modal
             const dataCorrigida = new Date(data.getTime() - (3 * 60 * 60 * 1000));
             
             const ano = dataCorrigida.getUTCFullYear();
@@ -603,7 +602,7 @@
       if (res.sucesso) {
         await carregarDados();
       } else {
-        alert("Erro ao excluir waypoint.");
+        alert(res.mensagem || "Erro ao excluir waypoint.");
       }
     }
 
