@@ -101,11 +101,11 @@
         <div class="space-y-3 text-sm">
           <div>
             <label class="font-semibold text-slate-600 block mb-1">Ponto de Parada / Atividade</label>
-            <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo ou Café da manhã" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviews()">
+            <input type="text" id="wpAtividade" placeholder="Ex: Pico Agudo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviews()">
           </div>
 
           <div>
-            <label class="font-semibold text-slate-600 block mb-1">Cidade <span class="text-slate-400 font-normal text-xs">(Opcional para itens genéricos)</span></label>
+            <label class="font-semibold text-slate-600 block mb-1">Cidade</label>
             <input type="text" id="wpCidade" placeholder="Ex: Santo Antônio do Pinhal" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="atualizarPreviews()">
           </div>
 
@@ -371,19 +371,8 @@
       let elementoParaFocar = null;
 
       waypoints.forEach(w => {
-        // Verifica se há cidade cadastrada para exibir o botão do Google Maps
-        const temCidade = w.cidade && w.cidade.trim() !== "";
-        let botaoMapsHTML = "";
-
-        if (temCidade) {
-          const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
-          const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
-          botaoMapsHTML = `
-            <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
-              <i data-lucide="map-pin" class="w-5 h-5"></i>
-            </a>
-          `;
-        }
+        const queryMaps = encodeURIComponent(`${w.atividade}, ${w.cidade}`);
+        const urlMaps = `https://www.google.com/maps/search/?api=1&query=${queryMaps}`;
 
         const card = document.createElement('div');
         card.id = `card-wp-${w.id}`;
@@ -405,11 +394,13 @@
           <div class="p-4 space-y-2">
             <div class="flex justify-between items-start">
               <div>
-                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
+                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Ponto de Parada'}</span>
                 <h3 class="font-bold text-slate-900 text-base mt-1">${w.atividade}</h3>
               </div>
               <div class="flex items-center gap-1">
-                ${botaoMapsHTML}
+                <a href="${urlMaps}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Abrir no Maps">
+                  <i data-lucide="map-pin" class="w-5 h-5"></i>
+                </a>
                 ${botoesAdmin}
               </div>
             </div>
@@ -599,8 +590,7 @@
       const iframe = document.getElementById('iframeMapsPreview');
       const btnTestar = document.getElementById('btnTestarMaps');
 
-      // Só exibe o preview do mapa se houver cidade preenchida
-      if (cidade !== "") {
+      if (atividade || cidade) {
         const termoBusca = encodeURIComponent(`${atividade}, ${cidade}`);
         const urlEmbed = `https://maps.google.com/maps?q=${termoBusca}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         const urlMaps = `https://www.google.com/maps/search/?api=1&query=${termoBusca}`;
@@ -689,7 +679,7 @@
         const res = await API({ action: 'excluirWaypoint', idWaypoint: idWaypoint });
         if (res.sucesso) {
           await carregarDados();
-          carregarRoteiro();
+          carregarRoteiro(); // Mantém a posição atual da tela sem focar automaticamente em outro item
         } else {
           alert(res.mensagem || "Erro ao excluir waypoint.");
         }
@@ -703,7 +693,7 @@
       document.getElementById('pagValorInput').value = valorAtual;
       document.getElementById('modalPagamento').classList.remove('hidden');
     }
-    function fecharModalPagamento() { document.getElementById('modalPagamento'].classList.add('hidden'); }
+    function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
 
     async function confirmarPagamentoRapido() {
       const id = document.getElementById('pagWpId').value;
@@ -716,7 +706,7 @@
         const res = await API({ action: 'atualizarPagamento', idWaypoint: id, valorPago: val, statusPago: 'Sim' });
         if(res.sucesso) {
           await carregarDados();
-          carregarRoteiro(id);
+          carregarRoteiro(id); // Foca no waypoint que teve o pagamento atualizado
         }
       } finally {
         esconderLoading();
