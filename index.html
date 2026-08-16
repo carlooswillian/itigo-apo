@@ -150,7 +150,6 @@
             </div>
           </div>
 
-          <!-- Seção de Foto Ajustada com Prévia e Atalho para o Google Imagens -->
           <div class="space-y-2">
             <div class="flex justify-between items-center">
               <label class="font-semibold text-slate-600 block text-xs">Foto do Lugar (URL da Imagem)</label>
@@ -456,10 +455,18 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
+        // Correção aplicada aqui: Tratamento seguro para separar data e hora
         if (wp.dataHora) {
-          const partes = wp.dataHora.split('T');
-          document.getElementById('wpData').value = partes[0] || '';
-          document.getElementById('wpHora').value = partes[1] || '';
+          const stringData = String(wp.dataHora).trim();
+          if (stringData.includes('T')) {
+            const partes = stringData.split('T');
+            document.getElementById('wpData').value = partes[0] || '';
+            // Pega apenas os 5 primeiros caracteres para garantir o formato HH:MM (evita segundos extras)
+            document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
+          } else {
+            document.getElementById('wpData').value = stringData.substring(0, 10);
+            document.getElementById('wpHora').value = '';
+          }
         } else {
           document.getElementById('wpData').value = '';
           document.getElementById('wpHora').value = '';
@@ -527,7 +534,6 @@
       const erroFoto = document.getElementById('erroFoto');
       const btnPesquisarImagens = document.getElementById('btnPesquisarImagens');
 
-      // Atualiza link de busca do Google Imagens
       const termoBuscaImg = encodeURIComponent(`${atividade} ${cidade} turismo`.trim());
       btnPesquisarImagens.href = `https://www.google.com/search?q=${termoBuscaImg}&tbm=isch`;
 
