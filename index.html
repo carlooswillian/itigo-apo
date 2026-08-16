@@ -393,7 +393,6 @@
       const data = new Date(dataStr);
       if (isNaN(data.getTime())) return dataStr;
 
-      // Subtrai 3 horas forçadamente (3 * 60 * 60 * 1000 milissegundos) para corrigir o deslocamento de fuso
       const dataCorrigida = new Date(data.getTime() - (3 * 60 * 60 * 1000));
 
       const dia = String(dataCorrigida.getUTCDate()).padStart(2, '0');
@@ -468,13 +467,21 @@
         document.getElementById('wpCidade').value = wp.cidade || '';
         
         if (wp.dataHora) {
-          const strData = String(wp.dataHora);
-          if (strData.includes('T')) {
-            const partes = strData.split('T');
-            document.getElementById('wpData').value = partes[0] || '';
-            document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
+          const data = new Date(wp.dataHora);
+          if (!isNaN(data.getTime())) {
+            // Aplica a mesma correção de -3 horas para exibir corretamente no input do modal
+            const dataCorrigida = new Date(data.getTime() - (3 * 60 * 60 * 1000));
+            
+            const ano = dataCorrigida.getUTCFullYear();
+            const mes = String(dataCorrigida.getUTCMonth() + 1).padStart(2, '0');
+            const dia = String(dataCorrigida.getUTCDate()).padStart(2, '0');
+            const hora = String(dataCorrigida.getUTCHours()).padStart(2, '0');
+            const min = String(dataCorrigida.getUTCMinutes()).padStart(2, '0');
+
+            document.getElementById('wpData').value = `${ano}-${mes}-${dia}`;
+            document.getElementById('wpHora').value = `${hora}:${min}`;
           } else {
-            document.getElementById('wpData').value = strData.substring(0, 10);
+            document.getElementById('wpData').value = '';
             document.getElementById('wpHora').value = '';
           }
         } else {
