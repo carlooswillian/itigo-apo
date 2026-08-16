@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <!-- Modal Waypoint Ajustado -->
+  <!-- Modal Waypoint Completo e Ajustado -->
   <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center flex items-center justify-center">
       <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8 text-left inline-block align-middle relative">
@@ -123,7 +123,7 @@
                 class="w-full h-full border-0" 
                 loading="lazy" 
                 allowfullscreen
-                style="touch-action: auto; pointer-events: auto;">
+                style="touch-action: pan-x pan-y pinch-zoom; pointer-events: auto;">
               </iframe>
             </div>
             <div class="flex justify-end">
@@ -472,9 +472,27 @@
         const urlEmbed = `https://maps.google.com/maps?q=${termoBusca}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         const urlMaps = `https://www.google.com/maps/search/?api=1&query=${termoBusca}`;
 
-        iframe.src = urlEmbed;
+        if (iframe.src !== urlEmbed) {
+          iframe.src = urlEmbed;
+        }
         btnTestar.href = urlMaps;
         box.classList.remove('hidden');
+
+        // Libera os gestos de toque no iframe (zoom e pan) para mobile sem travar a rolagem da página
+        iframe.onload = () => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (iframeDoc) {
+              iframeDoc.addEventListener('touchstart', (e) => {
+                if (e.touches.length >= 2) {
+                  e.stopPropagation();
+                }
+              }, { passive: true });
+            }
+          } catch (err) {
+            // Tratamento caso o navegador restrinja acesso direto ao documento do iframe cross-origin
+          }
+        };
       } else {
         box.classList.add('hidden');
         iframe.src = '';
