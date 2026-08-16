@@ -389,9 +389,17 @@
 
     function formatarData(dataStr) {
       if(!dataStr) return '';
-      const d = new Date(dataStr);
-      if (isNaN(d.getTime())) return dataStr;
-      return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      // Evita conversão de fuso ao exibir na listagem também
+      const stringData = String(dataStr).trim();
+      if (stringData.includes('T')) {
+        const partes = stringData.split('T');
+        const dataPartes = partes[0].split('-');
+        const horaPartes = partes[1] ? partes[1].substring(0, 5) : '00:00';
+        if (dataPartes.length === 3) {
+          return `${dataPartes[2]}/${dataPartes[1]}/${dataPartes[0]} às ${horaPartes}`;
+        }
+      }
+      return dataStr;
     }
 
     function toggleModoEdicao() {
@@ -455,13 +463,12 @@
         document.getElementById('wpAtividade').value = wp.atividade || '';
         document.getElementById('wpCidade').value = wp.cidade || '';
         
-        // Correção aplicada aqui: Tratamento seguro para separar data e hora
+        // Correção definitiva de fuso horário: Tratamento puro por texto da string
         if (wp.dataHora) {
           const stringData = String(wp.dataHora).trim();
           if (stringData.includes('T')) {
             const partes = stringData.split('T');
             document.getElementById('wpData').value = partes[0] || '';
-            // Pega apenas os 5 primeiros caracteres para garantir o formato HH:MM (evita segundos extras)
             document.getElementById('wpHora').value = partes[1] ? partes[1].substring(0, 5) : '';
           } else {
             document.getElementById('wpData').value = stringData.substring(0, 10);
