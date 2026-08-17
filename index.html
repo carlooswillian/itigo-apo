@@ -885,18 +885,28 @@
     }
 
 
-    async function excluirWaypointDoModal() {
+        async function excluirWaypointDoModal() {
       const idWaypoint = document.getElementById('wpId').value;
       if (!idWaypoint) return;
 
       if (!confirm("Tem certeza que deseja excluir este waypoint?")) return;
       
+      // Guarda a viagem atual antes de excluir
+      const selectViagemEl = document.getElementById('selectViagem');
+      const idViagemAtual = selectViagemEl.value;
+
       fecharModalWaypoint();
       mostrarLoading("Excluindo...");
       try {
         const res = await API({ action: 'excluirWaypoint', idWaypoint: idWaypoint });
         if (res.sucesso) {
           await carregarDados();
+          
+          // Restaura a viagem atual na tela
+          if (document.getElementById('selectViagem').querySelector(`option[value="${idViagemAtual}"]`)) {
+            document.getElementById('selectViagem').value = idViagemAtual;
+          }
+
           carregarRoteiro();
         } else {
           alert(res.mensagem || "Erro ao excluir waypoint.");
@@ -913,9 +923,13 @@
     }
     function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
 
-    async function confirmarPagamentoRapido() {
+        async function confirmarPagamentoRapido() {
       const realId = document.getElementById('pagWpId').value;
       const val = parseFloat(document.getElementById('pagValorInput').value) || 0;
+
+      // Guarda a viagem atual antes de registrar o pagamento
+      const selectViagemEl = document.getElementById('selectViagem');
+      const idViagemAtual = selectViagemEl.value;
 
       fecharModalPagamento();
       mostrarLoading("Registrando pagamento...");
@@ -924,7 +938,13 @@
         const res = await API({ action: 'atualizarPagamento', idWaypoint: realId, valorPago: val, statusPago: 'Sim' });
         if(res.sucesso) {
           await carregarDados();
-          carregarRoteiro(realId);
+          
+          // Restaura a viagem atual na tela
+          if (document.getElementById('selectViagem').querySelector(`option[value="${idViagemAtual}"]`)) {
+            document.getElementById('selectViagem').value = idViagemAtual;
+          }
+
+          carregarRoteiro(realId); // Mantém o scroll suave focando no item alterado
         }
       } finally {
         esconderLoading();
