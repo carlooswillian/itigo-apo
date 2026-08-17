@@ -30,7 +30,7 @@
     
     <button id="btnPin" onclick="toggleModoEdicao()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
       <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500" id="iconLock"></i>
-      <span id="txtAdmin">Modo Leitura</span>
+      <span id="txtAdmin">Modo Edição</span>
     </button>
   </header>
 
@@ -592,6 +592,7 @@
         localStorage.removeItem('itigo_pin');
         localStorage.removeItem('itigo_timestamp');
         
+        // Volta para o estado bloqueado: "Modo Edição" com cadeado FECHADO
         document.getElementById('txtAdmin').textContent = "Modo Edição";
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
@@ -622,6 +623,16 @@
       } else {
         alert("PIN Incorreto!");
       }
+    }
+
+    function ativarModoEdicaoVisual() {
+      // Estado desbloqueado: "Modo Leitura" com cadeado ABERTO
+      document.getElementById('txtAdmin').textContent = "Modo Leitura";
+      document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
+      document.getElementById('btnNovaViagem').classList.remove('hidden');
+      document.getElementById('btnAddWaypoint').classList.remove('hidden');
+      carregarRoteiroComFocoAutomatico();
+      lucide.createIcons();
     }
 
     function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
@@ -794,7 +805,7 @@
         cidade: document.getElementById('wpCidade').value,
         dataHora: dataHoraCombinada,
         valorOrcado: valorOrcadoInput,
-        valorEstimado: valorOrcadoInput, // Mantido para compatibilidade com dados antigos se necessário
+        valorEstimado: valorOrcadoInput,
         valorPago: parseFloat(document.getElementById('wpValorPago').value) || 0,
         linkFoto: document.getElementById('wpLinkFoto').value,
         linkMidia: document.getElementById('wpLinkMidia').value,
@@ -861,6 +872,15 @@
       } finally {
         esconderLoading();
       }
+    }
+
+    async function API(payload) {
+      if (userPin) payload.pin = userPin;
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
     }
   </script>
 </body>
