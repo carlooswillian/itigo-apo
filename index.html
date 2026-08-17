@@ -49,7 +49,7 @@
       <!-- Botão de Compartilhar Link da Viagem -->
       <button id="btnCompartilharViagem" onclick="compartilharViagemAtual()" class="w-full flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 py-2.5 rounded-xl hover:bg-indigo-100 transition">
         <i data-lucide="share-2" class="w-4 h-4"></i>
-        <span>Compartilhar Viagem</span>
+        <span>Compartilhar Link desta Viagem</span>
       </button>
 
       <div id="cardFinanceiro" class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
@@ -437,24 +437,20 @@
       const labelFalta = document.getElementById('labelFalta');
       const totalFalta = document.getElementById('totalFalta');
 
-      // Diferença total baseada em Orçado vs Pago (Positivo = Economia, Negativo = Excedente)
-      const diferencaTotal = orcadoTotal - pago;
-
-      if (diferencaTotal >= 0) {
-        // Cenário de Economia Real (Verde)
-        totalFalta.textContent = `R$ ${diferencaTotal.toFixed(2)}`;
+      // Validação de Excedido vs Economia
+      if (pago > orcadoTotal && orcadoTotal > 0) {
+        const excedido = pago - orcadoTotal;
+        totalFalta.textContent = `R$ ${excedido.toFixed(2)}`;
+        containerFalta.className = "bg-rose-50 p-2.5 rounded-xl transition-colors";
+        labelFalta.className = "block text-[10px] font-bold text-rose-600 uppercase";
+        totalFalta.className = "text-sm font-extrabold text-rose-700";
+        labelFalta.textContent = "Excedido";
+      } else {
+        totalFalta.textContent = `R$ ${economiaTotal.toFixed(2)}`;
         containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
         labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
         totalFalta.className = "text-sm font-extrabold text-emerald-700";
         labelFalta.textContent = "Economia";
-      } else {
-        // Cenário de Excedente / Estouro de Orçamento (Vermelho)
-        const excedente = Math.abs(diferencaTotal);
-        totalFalta.textContent = `R$ ${excedente.toFixed(2)}`;
-        containerFalta.className = "bg-rose-50 p-2.5 rounded-xl transition-colors";
-        labelFalta.className = "block text-[10px] font-bold text-rose-600 uppercase";
-        totalFalta.className = "text-sm font-extrabold text-rose-700";
-        labelFalta.textContent = "Excedente";
       }
 
       if (waypoints.length === 0) {
@@ -482,20 +478,14 @@
         }
 
         if (itensDoHorario.length > 1) {
-          const wrapperCarrossel = document.createElement('div');
-          wrapperCarrossel.className = "space-y-2";
-
           const carrosselDiv = document.createElement('div');
-          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pt-1";
-          
-          const carrosselId = `carrossel-${Math.random().toString(36).substr(2, 9)}`;
-          carrosselDiv.id = carrosselId;
+          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 pt-1";
 
           itensDoHorario.forEach((w) => {
             const cardHtml = criarCardHTML(w, false);
             const cardWrapper = document.createElement('div');
             cardWrapper.id = `card-wp-${w.id}`;
-            cardWrapper.className = "w-full flex-shrink-0 snap-start transition-all duration-300";
+            cardWrapper.className = "w-[85%] sm:w-[320px] flex-shrink-0 snap-start transition-all duration-300";
             cardWrapper.innerHTML = cardHtml;
             carrosselDiv.appendChild(cardWrapper);
 
@@ -504,33 +494,7 @@
             }
           });
 
-          wrapperCarrossel.appendChild(carrosselDiv);
-
-          const dotsDiv = document.createElement('div');
-          dotsDiv.className = "flex justify-center items-center gap-1.5 pb-1";
-          dotsDiv.id = `dots-${carrosselId}`;
-
-          itensDoHorario.forEach((_, index) => {
-            const dot = document.createElement('div');
-            dot.className = `h-1.5 rounded-full transition-all duration-300 ${index === 0 ? 'w-4 bg-indigo-600' : 'w-1.5 bg-slate-300'}`;
-            dotsDiv.appendChild(dot);
-          });
-
-          wrapperCarrossel.appendChild(dotsDiv);
-
-          carrosselDiv.addEventListener('scroll', () => {
-            const indexAtivo = Math.round(carrosselDiv.scrollLeft / carrosselDiv.clientWidth);
-            const dots = dotsDiv.children;
-            for (let i = 0; i < dots.length; i++) {
-              if (i === indexAtivo) {
-                dots[i].className = "h-1.5 rounded-full transition-all duration-300 w-4 bg-indigo-600";
-              } else {
-                dots[i].className = "h-1.5 rounded-full transition-all duration-300 w-1.5 bg-slate-300";
-              }
-            }
-          });
-
-          blocoDiv.appendChild(wrapperCarrossel);
+          blocoDiv.appendChild(carrosselDiv);
         } else {
           const w = itensDoHorario[0];
           const cardHtml = criarCardHTML(w, true);
@@ -580,7 +544,7 @@
 
       const botaoPagamentoHtml = !modoLeituraForcado ? `
         <button onclick="abrirModalPagamento('${w.id}', ${w.valorPago})" class="bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-xl border border-blue-200 hover:bg-blue-100 active:scale-95 transition">
-          Pago
+          Registrar Pagamento
         </button>
       ` : '';
 
@@ -679,6 +643,14 @@
       } else {
         alert("PIN Incorreto!");
       }
+    }
+
+    function ativarModoEdicaoVisual() {
+      document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
+      document.getElementById('btnNovaViagem').classList.remove('hidden');
+      document.getElementById('btnAddWaypoint').classList.remove('hidden');
+      carregarRoteiroComFocoAutomatico();
+      lucide.createIcons();
     }
 
     function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
