@@ -28,9 +28,8 @@
       <h1 class="font-bold text-xl tracking-tight text-slate-900">Iti<span class="text-indigo-600">Go</span></h1>
     </div>
     
-    <button id="btnPin" onclick="toggleModoEdicao()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition">
-      <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-500" id="iconLock"></i>
-      <span id="txtAdmin">Modo Edição</span>
+    <button id="btnPin" onclick="toggleModoEdicao()" class="flex items-center justify-center p-2 rounded-xl border border-slate-300 bg-white shadow-sm hover:bg-slate-50 active:scale-95 transition" title="Alternar Modo de Edição">
+      <i data-lucide="lock" class="w-5 h-5 text-amber-500" id="iconLock"></i>
     </button>
   </header>
 
@@ -321,7 +320,6 @@
     }
 
     function ativarModoEdicaoVisual() {
-      document.getElementById('txtAdmin').textContent = "Modo Leitura";
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
@@ -592,8 +590,7 @@
         localStorage.removeItem('itigo_pin');
         localStorage.removeItem('itigo_timestamp');
         
-        // Volta para o estado bloqueado: "Modo Edição" com cadeado FECHADO
-        document.getElementById('txtAdmin').textContent = "Modo Edição";
+        // Volta para o estado bloqueado: ícone de cadeado FECHADO
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
         document.getElementById('btnAddWaypoint').classList.add('hidden');
@@ -626,8 +623,7 @@
     }
 
     function ativarModoEdicaoVisual() {
-      // Estado desbloqueado: "Modo Leitura" com cadeado ABERTO
-      document.getElementById('txtAdmin').textContent = "Modo Leitura";
+      // Estado desbloqueado: ícone de cadeado ABERTO
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
@@ -872,15 +868,6 @@
       } finally {
         esconderLoading();
       }
-    }
-
-    async function API(payload) {
-      if (userPin) payload.pin = userPin;
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      return await res.json();
     }
   </script>
 </body>
