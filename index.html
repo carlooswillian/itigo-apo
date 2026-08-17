@@ -273,7 +273,7 @@
       }
     }
 
-    function compartilharViagemAtual() {
+        function compartilharViagemAtual() {
       const selectViagem = document.getElementById('selectViagem');
       const viagemId = selectViagem.value;
       const nomeViagem = selectViagem.options[selectViagem.selectedIndex]?.text || "Viagem";
@@ -283,8 +283,8 @@
         return;
       }
 
-      const baseURL = window.location.origin + window.location.pathname;
-      const linkCompartilhamento = `${baseURL}?viagem=${viagemId}&modo=leitura`;
+      const baseURL = window.location.origin + window.location.pathname.replace('index.html', '');
+      const linkCompartilhamento = `${baseURL}compartilhado.html?viagem=${viagemId}`;
 
       if (navigator.clipboard) {
         navigator.clipboard.writeText(linkCompartilhamento).then(() => {
