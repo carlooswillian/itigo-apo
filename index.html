@@ -49,7 +49,7 @@
       <!-- Botão de Compartilhar Link da Viagem -->
       <button id="btnCompartilharViagem" onclick="compartilharViagemAtual()" class="w-full flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 py-2.5 rounded-xl hover:bg-indigo-100 transition">
         <i data-lucide="share-2" class="w-4 h-4"></i>
-        <span>Compartilhar Esta Viagem</span>
+        <span>Compartilhar Link desta Viagem</span>
       </button>
 
       <div id="cardFinanceiro" class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
@@ -392,39 +392,7 @@
           return new Date(a.dataHora) - new Date(b.dataHora);
         });
 
-      let orcadoTotal = 0, pago = 0;
-      waypoints.forEach(w => {
-        orcadoTotal += (w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0));
-        pago += w.valorPago;
-      });
-
-      document.getElementById('totalOrcado').textContent = `R$ ${orcadoTotal.toFixed(2)}`;
-      document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
-
-      const diferenca = orcadoTotal - pago;
-      const containerFalta = document.getElementById('containerFalta');
-      const labelFalta = document.getElementById('labelFalta');
-      const totalFalta = document.getElementById('totalFalta');
-
-      totalFalta.textContent = `R$ ${Math.abs(diferenca).toFixed(2)}`;
-
-      if (diferenca < 0) {
-        containerFalta.className = "bg-rose-50 p-2.5 rounded-xl transition-colors";
-        labelFalta.className = "block text-[10px] font-bold text-rose-600 uppercase";
-        totalFalta.className = "text-sm font-extrabold text-rose-700";
-        labelFalta.textContent = "Excedente";
-      } else {
-        containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
-        labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
-        totalFalta.className = "text-sm font-extrabold text-emerald-700";
-        labelFalta.textContent = "Economia";
-      }
-
-      if (waypoints.length === 0) {
-        container.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium text-sm">Nenhum ponto adicionado a esta viagem.</div>`;
-        return;
-      }
-
+      // Agrupa os waypoints por data/horário para aplicar a regra do orçamento inteligente
       const gruposPorHorario = {};
       waypoints.forEach(w => {
         const chave = w.dataHora ? w.dataHora : `sem_data_${Math.random()}`;
@@ -433,6 +401,53 @@
         }
         gruposPorHorario[chave].push(w);
       });
+
+      let orcadoTotal = 0;
+      let pago = 0;
+      let economiaTotal = 0;
+
+      // Cálculo financeiro inteligente
+      Object.keys(gruposPorHorario).forEach(chave => {
+        const itens = gruposPorHorario[chave];
+
+        // Se houver opções no mesmo horário (carrossel), considera apenas o MAIOR valor orçado
+        const maiorOrcadoDoHorario = Math.max(...itens.map(w => (w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0))));
+        orcadoTotal += maiorOrcadoDoHorario;
+
+        itens.forEach(w => {
+          const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
+          const valorPagoItem = w.valorPago || 0;
+
+          pago += valorPagoItem;
+
+          // Economia somente computada para itens onde já houve pagamento preenchido
+          if (valorPagoItem > 0 && valorOrcadoItem > 0) {
+            const diff = valorOrcadoItem - valorPagoItem;
+            if (diff > 0) {
+              economiaTotal += diff;
+            }
+          }
+        });
+      });
+
+      document.getElementById('totalOrcado').textContent = `R$ ${orcadoTotal.toFixed(2)}`;
+      document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
+
+      const containerFalta = document.getElementById('containerFalta');
+      const labelFalta = document.getElementById('labelFalta');
+      const totalFalta = document.getElementById('totalFalta');
+
+      // Agora o terceiro card exibe a Economia Real acumulada
+      totalFalta.textContent = `R$ ${economiaTotal.toFixed(2)}`;
+      containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
+      labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
+      totalFalta.className = "text-sm font-extrabold text-emerald-700";
+      labelFalta.textContent = "Economia";
+
+      if (waypoints.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium text-sm">Nenhum ponto adicionado a esta viagem.</div>`;
+        return;
+      }
 
       let elementoParaFocar = null;
 
@@ -590,7 +605,6 @@
         localStorage.removeItem('itigo_pin');
         localStorage.removeItem('itigo_timestamp');
         
-        // Volta para o estado bloqueado: ícone de cadeado FECHADO
         document.getElementById('iconLock').setAttribute('data-lucide', 'lock');
         document.getElementById('btnNovaViagem').classList.add('hidden');
         document.getElementById('btnAddWaypoint').classList.add('hidden');
@@ -623,7 +637,6 @@
     }
 
     function ativarModoEdicaoVisual() {
-      // Estado desbloqueado: ícone de cadeado ABERTO
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
