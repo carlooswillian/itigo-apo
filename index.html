@@ -478,14 +478,17 @@
         }
 
         if (itensDoHorario.length > 1) {
+          const carrosselContainerDiv = document.createElement('div');
+          carrosselContainerDiv.className = "space-y-2";
+
           const carrosselDiv = document.createElement('div');
-          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 pt-1";
+          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-1 w-full";
 
           itensDoHorario.forEach((w) => {
             const cardHtml = criarCardHTML(w, false);
             const cardWrapper = document.createElement('div');
             cardWrapper.id = `card-wp-${w.id}`;
-            cardWrapper.className = "w-[85%] sm:w-[320px] flex-shrink-0 snap-start transition-all duration-300";
+            cardWrapper.className = "w-full flex-shrink-0 snap-start transition-all duration-300";
             cardWrapper.innerHTML = cardHtml;
             carrosselDiv.appendChild(cardWrapper);
 
@@ -494,7 +497,43 @@
             }
           });
 
-          blocoDiv.appendChild(carrosselDiv);
+          carrosselContainerDiv.appendChild(carrosselDiv);
+
+          // Criação dos Dots indicadores
+          const dotsDiv = document.createElement('div');
+          dotsDiv.className = "flex justify-center items-center gap-1.5 pt-1";
+          
+          itensDoHorario.forEach((_, index) => {
+            const dot = document.createElement('button');
+            dot.className = `h-1.5 rounded-full transition-all duration-300 ${index === 0 ? 'w-4 bg-indigo-600' : 'w-1.5 bg-slate-300'}`;
+            dot.setAttribute('aria-label', `Ir para opção ${index + 1}`);
+            dot.onclick = () => {
+              const cardAlvo = carrosselDiv.children[index];
+              if (cardAlvo) {
+                cardAlvo.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+              }
+            };
+            dotsDiv.appendChild(dot);
+          });
+
+          carrosselContainerDiv.appendChild(dotsDiv);
+
+          // Atualiza os dots ativos conforme o usuário faz o scroll manual
+          carrosselDiv.addEventListener('scroll', () => {
+            const scrollLeft = carrosselDiv.scrollLeft;
+            const cardWidth = carrosselDiv.clientWidth;
+            const indexAtivo = Math.round(scrollLeft / cardWidth);
+
+            Array.from(dotsDiv.children).forEach((dot, idx) => {
+              if (idx === indexAtivo) {
+                dot.className = "h-1.5 w-4 rounded-full bg-indigo-600 transition-all duration-300";
+              } else {
+                dot.className = "h-1.5 w-1.5 rounded-full bg-slate-300 transition-all duration-300";
+              }
+            });
+          });
+
+          blocoDiv.appendChild(carrosselContainerDiv);
         } else {
           const w = itensDoHorario[0];
           const cardHtml = criarCardHTML(w, true);
@@ -643,14 +682,6 @@
       } else {
         alert("PIN Incorreto!");
       }
-    }
-
-    function ativarModoEdicaoVisual() {
-      document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
-      document.getElementById('btnNovaViagem').classList.remove('hidden');
-      document.getElementById('btnAddWaypoint').classList.remove('hidden');
-      carregarRoteiroComFocoAutomatico();
-      lucide.createIcons();
     }
 
     function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
