@@ -469,8 +469,14 @@
         }
 
         if (itensDoHorario.length > 1) {
+          const wrapperCarrossel = document.createElement('div');
+          wrapperCarrossel.className = "space-y-2";
+
           const carrosselDiv = document.createElement('div');
-          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 pt-1";
+          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pt-1";
+          
+          const carrosselId = `carrossel-${Math.random().toString(36).substr(2, 9)}`;
+          carrosselDiv.id = carrosselId;
 
           itensDoHorario.forEach((w) => {
             const cardHtml = criarCardHTML(w, false);
@@ -485,7 +491,33 @@
             }
           });
 
-          blocoDiv.appendChild(carrosselDiv);
+          wrapperCarrossel.appendChild(carrosselDiv);
+
+          const dotsDiv = document.createElement('div');
+          dotsDiv.className = "flex justify-center items-center gap-1.5 pb-1";
+          dotsDiv.id = `dots-${carrosselId}`;
+
+          itensDoHorario.forEach((_, index) => {
+            const dot = document.createElement('div');
+            dot.className = `h-1.5 rounded-full transition-all duration-300 ${index === 0 ? 'w-4 bg-indigo-600' : 'w-1.5 bg-slate-300'}`;
+            dotsDiv.appendChild(dot);
+          });
+
+          wrapperCarrossel.appendChild(dotsDiv);
+
+          carrosselDiv.addEventListener('scroll', () => {
+            const indexAtivo = Math.round(carrosselDiv.scrollLeft / carrosselDiv.clientWidth);
+            const dots = dotsDiv.children;
+            for (let i = 0; i < dots.length; i++) {
+              if (i === indexAtivo) {
+                dots[i].className = "h-1.5 rounded-full transition-all duration-300 w-4 bg-indigo-600";
+              } else {
+                dots[i].className = "h-1.5 rounded-full transition-all duration-300 w-1.5 bg-slate-300";
+              }
+            }
+          });
+
+          blocoDiv.appendChild(wrapperCarrossel);
         } else {
           const w = itensDoHorario[0];
           const cardHtml = criarCardHTML(w, true);
