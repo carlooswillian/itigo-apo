@@ -404,7 +404,7 @@
 
       let orcadoTotal = 0;
       let pago = 0;
-      let economiaTotal = 0;
+      let diferencaTotal = 0; // Positivo = Economia, Negativo = Excedente
 
       // Cálculo financeiro inteligente
       Object.keys(gruposPorHorario).forEach(chave => {
@@ -415,20 +415,13 @@
         orcadoTotal += maiorOrcadoDoHorario;
 
         itens.forEach(w => {
-          const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
           const valorPagoItem = w.valorPago || 0;
-
           pago += valorPagoItem;
-
-          // Economia somente computada para itens onde já houve pagamento preenchido
-          if (valorPagoItem > 0 && valorOrcadoItem > 0) {
-            const diff = valorOrcadoItem - valorPagoItem;
-            if (diff > 0) {
-              economiaTotal += diff;
-            }
-          }
         });
       });
+
+      // Diferença total: Orçado menos Pago
+      diferencaTotal = orcadoTotal - pago;
 
       document.getElementById('totalOrcado').textContent = `R$ ${orcadoTotal.toFixed(2)}`;
       document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
@@ -437,12 +430,22 @@
       const labelFalta = document.getElementById('labelFalta');
       const totalFalta = document.getElementById('totalFalta');
 
-      // Agora o terceiro card exibe a Economia Real acumulada
-      totalFalta.textContent = `R$ ${economiaTotal.toFixed(2)}`;
-      containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
-      labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
-      totalFalta.className = "text-sm font-extrabold text-emerald-700";
-      labelFalta.textContent = "Economia";
+      if (diferencaTotal >= 0) {
+        // Cenário de Economia (Verde)
+        totalFalta.textContent = `R$ ${diferencaTotal.toFixed(2)}`;
+        containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
+        labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
+        totalFalta.className = "text-sm font-extrabold text-emerald-700";
+        labelFalta.textContent = "Economia";
+      } else {
+        // Cenário de Excedente / Estouro de Orçamento (Vermelho)
+        const excedente = Math.abs(diferencaTotal);
+        totalFalta.textContent = `R$ ${excedente.toFixed(2)}`;
+        containerFalta.className = "bg-rose-50 p-2.5 rounded-xl transition-colors";
+        labelFalta.className = "block text-[10px] font-bold text-rose-600 uppercase";
+        totalFalta.className = "text-sm font-extrabold text-rose-700";
+        labelFalta.textContent = "Excedente";
+      }
 
       if (waypoints.length === 0) {
         container.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium text-sm">Nenhum ponto adicionado a esta viagem.</div>`;
@@ -666,14 +669,6 @@
       } else {
         alert("PIN Incorreto!");
       }
-    }
-
-    function ativarModoEdicaoVisual() {
-      document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
-      document.getElementById('btnNovaViagem').classList.remove('hidden');
-      document.getElementById('btnAddWaypoint').classList.remove('hidden');
-      carregarRoteiroComFocoAutomatico();
-      lucide.createIcons();
     }
 
     function abrirModalViagem() { document.getElementById('modalViagem').classList.remove('hidden'); }
