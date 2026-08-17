@@ -404,7 +404,7 @@
 
       let orcadoTotal = 0;
       let pago = 0;
-      let diferencaTotal = 0; // Positivo = Economia, Negativo = Excedente
+      let economiaTotal = 0;
 
       // Cálculo financeiro inteligente
       Object.keys(gruposPorHorario).forEach(chave => {
@@ -415,13 +415,20 @@
         orcadoTotal += maiorOrcadoDoHorario;
 
         itens.forEach(w => {
+          const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
           const valorPagoItem = w.valorPago || 0;
+
           pago += valorPagoItem;
+
+          // Economia somente computada para itens onde já houve pagamento preenchido
+          if (valorPagoItem > 0 && valorOrcadoItem > 0) {
+            const diff = valorOrcadoItem - valorPagoItem;
+            if (diff > 0) {
+              economiaTotal += diff;
+            }
+          }
         });
       });
-
-      // Diferença total: Orçado menos Pago
-      diferencaTotal = orcadoTotal - pago;
 
       document.getElementById('totalOrcado').textContent = `R$ ${orcadoTotal.toFixed(2)}`;
       document.getElementById('totalPago').textContent = `R$ ${pago.toFixed(2)}`;
@@ -430,8 +437,11 @@
       const labelFalta = document.getElementById('labelFalta');
       const totalFalta = document.getElementById('totalFalta');
 
+      // Diferença total baseada em Orçado vs Pago (Positivo = Economia, Negativo = Excedente)
+      const diferencaTotal = orcadoTotal - pago;
+
       if (diferencaTotal >= 0) {
-        // Cenário de Economia (Verde)
+        // Cenário de Economia Real (Verde)
         totalFalta.textContent = `R$ ${diferencaTotal.toFixed(2)}`;
         containerFalta.className = "bg-emerald-50 p-2.5 rounded-xl transition-colors";
         labelFalta.className = "block text-[10px] font-bold text-emerald-600 uppercase";
