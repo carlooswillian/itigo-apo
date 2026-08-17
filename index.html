@@ -46,7 +46,6 @@
         <option value="">Carregando viagens...</option>
       </select>
 
-      <!-- Botão de Compartilhar Link da Viagem -->
       <button id="btnCompartilharViagem" onclick="compartilharViagemAtual()" class="w-full flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 py-2.5 rounded-xl hover:bg-indigo-100 transition">
         <i data-lucide="share-2" class="w-4 h-4"></i>
         <span>Compartilhar Link desta Viagem</span>
@@ -98,7 +97,6 @@
     </div>
   </div>
 
-  <!-- Modal Waypoint Completo -->
   <div id="modalWaypoint" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center flex items-center justify-center">
       <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 my-8 text-left inline-block align-middle relative">
@@ -245,7 +243,12 @@
       }
 
       try {
-        const res = await API({ action: 'getDados' });
+        const payload = { action: 'getDados' };
+        if (modoLeituraForcado && viagemIdUrl) {
+          payload.viagemId = viagemIdUrl;
+        }
+
+        const res = await API(payload);
         if (res.sucesso) {
           appData = res;
           renderizarSeletorViagem();
@@ -392,7 +395,6 @@
           return new Date(a.dataHora) - new Date(b.dataHora);
         });
 
-      // Agrupa os waypoints por data/horário para aplicar a regra do orçamento inteligente
       const gruposPorHorario = {};
       waypoints.forEach(w => {
         const chave = w.dataHora ? w.dataHora : `sem_data_${Math.random()}`;
@@ -406,11 +408,8 @@
       let pago = 0;
       let economiaTotal = 0;
 
-      // Cálculo financeiro inteligente
       Object.keys(gruposPorHorario).forEach(chave => {
         const itens = gruposPorHorario[chave];
-
-        // Se houver opções no mesmo horário (carrossel), considera apenas o MAIOR valor orçado
         const maiorOrcadoDoHorario = Math.max(...itens.map(w => (w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0))));
         orcadoTotal += maiorOrcadoDoHorario;
 
@@ -420,7 +419,6 @@
 
           pago += valorPagoItem;
 
-          // Economia somente computada para itens onde já houve pagamento preenchido
           if (valorPagoItem > 0 && valorOrcadoItem > 0) {
             const diff = valorOrcadoItem - valorPagoItem;
             if (diff > 0) {
@@ -437,7 +435,6 @@
       const labelFalta = document.getElementById('labelFalta');
       const totalFalta = document.getElementById('totalFalta');
 
-      // Validação de Excedido vs Economia
       if (pago > orcadoTotal && orcadoTotal > 0) {
         const excedido = pago - orcadoTotal;
         totalFalta.textContent = `R$ ${excedido.toFixed(2)}`;
@@ -499,7 +496,6 @@
 
           carrosselContainerDiv.appendChild(carrosselDiv);
 
-          // Criação dos Dots indicadores
           const dotsDiv = document.createElement('div');
           dotsDiv.className = "flex justify-center items-center gap-1.5 pt-1";
           
@@ -518,7 +514,6 @@
 
           carrosselContainerDiv.appendChild(dotsDiv);
 
-          // Atualiza os dots ativos conforme o usuário faz o scroll manual
           carrosselDiv.addEventListener('scroll', () => {
             const scrollLeft = carrosselDiv.scrollLeft;
             const cardWidth = carrosselDiv.clientWidth;
@@ -709,7 +704,14 @@
 
     async function carregarDados() {
       try {
-        const res = await API({ action: 'getDados' });
+        const urlParams = new URLSearchParams(window.location.search);
+        const viagemIdUrl = urlParams.get('viagem');
+        const payload = { action: 'getDados' };
+        if (modoLeituraForcado && viagemIdUrl) {
+          payload.viagemId = viagemIdUrl;
+        }
+
+        const res = await API(payload);
         if (res.sucesso) {
           appData = res;
           renderizarSeletorViagem();
@@ -831,8 +833,7 @@
       }
     }
 
-        async function salvarWaypoint() {
-      // Guarda qual é a viagem selecionada atualmente no <select> antes de recarregar
+    async function salvarWaypoint() {
       const selectViagemEl = document.getElementById('selectViagem');
       const idViagemAtual = selectViagemEl.value;
       const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
@@ -849,7 +850,7 @@
       
       const wp = {
         id: wpIdInput,
-        idViagem: idViagemAtual, // Garante que usa o ID da viagem atual da tela
+        idViagem: idViagemAtual,
         nomeViagem: nomeViagem,
         atividade: document.getElementById('wpAtividade').value,
         cidade: document.getElementById('wpCidade').value,
@@ -871,27 +872,24 @@
         if(res.sucesso) {
           await carregarDados();
           
-          // Restaura explicitamente a viagem que estava selecionada na tela
           if (document.getElementById('selectViagem').querySelector(`option[value="${idViagemAtual}"]`)) {
             document.getElementById('selectViagem').value = idViagemAtual;
           }
 
           const idFoco = wp.id || res.id;
-          carregarRoteiro(idFoco); // Executa o roteiro e o scroll suave para o waypoint criado/editado
+          carregarRoteiro(idFoco);
         }
       } finally {
         esconderLoading();
       }
     }
 
-
-        async function excluirWaypointDoModal() {
+    async function excluirWaypointDoModal() {
       const idWaypoint = document.getElementById('wpId').value;
       if (!idWaypoint) return;
 
       if (!confirm("Tem certeza que deseja excluir este waypoint?")) return;
       
-      // Guarda a viagem atual antes de excluir
       const selectViagemEl = document.getElementById('selectViagem');
       const idViagemAtual = selectViagemEl.value;
 
@@ -902,7 +900,6 @@
         if (res.sucesso) {
           await carregarDados();
           
-          // Restaura a viagem atual na tela
           if (document.getElementById('selectViagem').querySelector(`option[value="${idViagemAtual}"]`)) {
             document.getElementById('selectViagem').value = idViagemAtual;
           }
@@ -921,13 +918,13 @@
       document.getElementById('pagValorInput').value = valorAtual;
       document.getElementById('modalPagamento').classList.remove('hidden');
     }
+    
     function fecharModalPagamento() { document.getElementById('modalPagamento').classList.add('hidden'); }
 
-        async function confirmarPagamentoRapido() {
+    async function confirmarPagamentoRapido() {
       const realId = document.getElementById('pagWpId').value;
       const val = parseFloat(document.getElementById('pagValorInput').value) || 0;
 
-      // Guarda a viagem atual antes de registrar o pagamento
       const selectViagemEl = document.getElementById('selectViagem');
       const idViagemAtual = selectViagemEl.value;
 
@@ -939,12 +936,11 @@
         if(res.sucesso) {
           await carregarDados();
           
-          // Restaura a viagem atual na tela
           if (document.getElementById('selectViagem').querySelector(`option[value="${idViagemAtual}"]`)) {
             document.getElementById('selectViagem').value = idViagemAtual;
           }
 
-          carregarRoteiro(realId); // Mantém o scroll suave focando no item alterado
+          carregarRoteiro(realId);
         }
       } finally {
         esconderLoading();
