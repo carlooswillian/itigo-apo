@@ -831,9 +831,10 @@
       }
     }
 
-    async function salvarWaypoint() {
-      const idViagem = document.getElementById('selectViagem').value;
+        async function salvarWaypoint() {
+      // Guarda qual é a viagem selecionada atualmente no <select> antes de recarregar
       const selectViagemEl = document.getElementById('selectViagem');
+      const idViagemAtual = selectViagemEl.value;
       const nomeViagem = selectViagemEl.options[selectViagemEl.selectedIndex] ? selectViagemEl.options[selectViagemEl.selectedIndex].text : '';
 
       const dataVal = document.getElementById('wpData').value;
@@ -848,7 +849,7 @@
       
       const wp = {
         id: wpIdInput,
-        idViagem: idViagem,
+        idViagem: idViagemAtual, // Garante que usa o ID da viagem atual da tela
         nomeViagem: nomeViagem,
         atividade: document.getElementById('wpAtividade').value,
         cidade: document.getElementById('wpCidade').value,
@@ -869,13 +870,20 @@
         const res = await API({ action: 'salvarWaypoint', waypoint: wp });
         if(res.sucesso) {
           await carregarDados();
+          
+          // Restaura explicitamente a viagem que estava selecionada na tela
+          if (document.getElementById('selectViagem').querySelector(`option[value="${idViagemAtual}"]`)) {
+            document.getElementById('selectViagem').value = idViagemAtual;
+          }
+
           const idFoco = wp.id || res.id;
-          carregarRoteiro(idFoco);
+          carregarRoteiro(idFoco); // Executa o roteiro e o scroll suave para o waypoint criado/editado
         }
       } finally {
         esconderLoading();
       }
     }
+
 
     async function excluirWaypointDoModal() {
       const idWaypoint = document.getElementById('wpId').value;
