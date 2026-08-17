@@ -55,7 +55,7 @@
 
       <div id="cardFinanceiro" class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
         <div class="bg-slate-50 p-2.5 rounded-xl">
-          <span class="block text-[10px] font-bold text-slate-400 uppercase">Estimado</span>
+          <span class="block text-[10px] font-bold text-slate-400 uppercase">Orçado</span>
           <span id="totalEstimado" class="text-sm font-extrabold text-slate-700">R$ 0</span>
         </div>
         <div class="bg-blue-50 p-2.5 rounded-xl">
@@ -153,7 +153,7 @@
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="font-semibold text-slate-600 block mb-1">Valor Estimado (R$)</label>
+              <label class="font-semibold text-slate-600 block mb-1">Valor Orçado (R$)</label>
               <input type="number" step="0.01" id="wpValorEstimado" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
             </div>
             <div>
@@ -288,7 +288,7 @@
 
       if (navigator.clipboard) {
         navigator.clipboard.writeText(linkCompartilhamento).then(() => {
-          alert(`Link da viagem "${nomeViagem}" copiado com sucesso!\n\nEnvie para sua esposa ou amigos.`);
+          alert(`Link da viagem "${nomeViagem}"Copiado com sucesso!`);
         });
       } else {
         prompt("Copie o link abaixo:", linkCompartilhamento);
@@ -323,7 +323,7 @@
     }
 
     function ativarModoEdicaoVisual() {
-      document.getElementById('txtAdmin').textContent = "Modo Leitura";
+      document.getElementById('txtAdmin').textContent = "Modo Edição";
       document.getElementById('iconLock').setAttribute('data-lucide', 'unlock');
       document.getElementById('btnNovaViagem').classList.remove('hidden');
       document.getElementById('btnAddWaypoint').classList.remove('hidden');
