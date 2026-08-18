@@ -510,7 +510,7 @@
       }
     }
 
-    function criarCardHTML(w, exibirDataHoraNoCard = false) {
+        function criarCardHTML(w, exibirDataHoraNoCard = false) {
       const temCidade = w.cidade && w.cidade.trim() !== "";
       const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
 
@@ -527,10 +527,13 @@
               <div class="flex justify-between items-start gap-2">
                 <div class="min-w-0 flex-1">
                   <h3 class="font-bold text-slate-900 text-base leading-snug break-words">${w.atividade}</h3>
-                  <div class="mt-1 flex flex-wrap items-center gap-2">
+                  
+                  <!-- AJUSTE AQUI: Mudado para coluna (flex-col) para garantir que fiquem um abaixo do outro -->
+                  <div class="mt-1.5 flex flex-col items-start gap-1">
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
-                    ${dataHoraFormatada ? `<span class="text-[10px] font-semibold text-slate-500 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> ${dataHoraFormatada}</span>` : ''}
+                    ${dataHoraFormatada ? `<span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> ${dataHoraFormatada}</span>` : ''}
                   </div>
+
                 </div>
                 <div class="flex items-center gap-1 flex-shrink-0">
                   ${temCidade ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${w.atividade}, ${w.cidade}`)}" target="_blank" class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition" title="Maps"><i data-lucide="map-pin" class="w-5 h-5"></i></a>` : ''}
