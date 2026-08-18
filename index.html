@@ -12,6 +12,22 @@
     .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Barra de rolagem sutil para o carrossel */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.6);
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
@@ -434,7 +450,8 @@
           carrosselContainerDiv.className = "space-y-2";
 
           const carrosselDiv = document.createElement('div');
-          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-1 w-full";
+          // Adicionada a classe 'custom-scrollbar' e alterado para 'pb-2' para comportar a barra sutil
+          carrosselDiv.className = "flex gap-3 overflow-x-auto custom-scrollbar snap-x snap-mandatory pb-2 w-full";
 
           itensDoHorario.forEach((w) => {
             const cardHtml = criarCardHTML(w);
