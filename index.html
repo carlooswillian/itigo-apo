@@ -12,22 +12,6 @@
     .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Barra de rolagem sutil para o carrossel */
-    .custom-scrollbar::-webkit-scrollbar {
-      height: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.03);
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(99, 102, 241, 0.3);
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(99, 102, 241, 0.6);
-    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
@@ -450,8 +434,9 @@
           carrosselContainerDiv.className = "space-y-2";
 
           const carrosselDiv = document.createElement('div');
-          // Adicionada a classe 'custom-scrollbar' e alterado para 'pb-2' para comportar a barra sutil
-          carrosselDiv.className = "flex gap-3 overflow-x-auto custom-scrollbar snap-x snap-mandatory pb-2 w-full";
+          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory w-full";
+          const carrosselId = `carrossel-${Math.random().toString(36).substr(2, 9)}`;
+          carrosselDiv.id = carrosselId;
 
           itensDoHorario.forEach((w) => {
             const cardHtml = criarCardHTML(w);
@@ -465,6 +450,38 @@
           });
 
           carrosselContainerDiv.appendChild(carrosselDiv);
+
+          // Criação dos Dots (Bolinhas) abaixo do carrossel
+          const dotsDiv = document.createElement('div');
+          dotsDiv.className = "flex justify-center items-center gap-1.5 pt-1";
+          
+          itensDoHorario.forEach((w, index) => {
+            const dot = document.createElement('button');
+            dot.className = `h-1.5 rounded-full transition-all duration-300 ${index === 0 ? 'w-4 bg-indigo-600' : 'w-1.5 bg-slate-300'}`;
+            dot.onclick = () => {
+              const cardEl = document.getElementById(`card-wp-${w.id}`);
+              cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+            };
+            dotsDiv.appendChild(dot);
+          });
+
+          // Listener para atualizar os dots quando o usuário fizer scroll manualmente
+          carrosselDiv.onscroll = () => {
+            const scrollLeft = carrosselDiv.scrollLeft;
+            const cardWidth = carrosselDiv.offsetWidth;
+            const activeIndex = Math.round(scrollLeft / cardWidth);
+            
+            const dots = dotsDiv.children;
+            for (let i = 0; i < dots.length; i++) {
+              if (i === activeIndex) {
+                dots[i].className = "h-1.5 w-4 rounded-full bg-indigo-600 transition-all duration-300";
+              } else {
+                dots[i].className = "h-1.5 w-1.5 rounded-full bg-slate-300 transition-all duration-300";
+              }
+            }
+          };
+
+          carrosselContainerDiv.appendChild(dotsDiv);
           blocoDiv.appendChild(carrosselContainerDiv);
         } else {
           const w = itensDoHorario[0];
