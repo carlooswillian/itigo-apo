@@ -422,16 +422,25 @@
         const blocoDiv = document.createElement('div');
         blocoDiv.className = "space-y-2";
 
-        if (itensDoHorario.length > 1 && primeiroWp.dataHora) {
-          const headerOpcoes = document.createElement('div');
-          headerOpcoes.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
-          headerOpcoes.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
-          blocoDiv.appendChild(headerOpcoes);
+        // Se houver apenas 1 item no horário e ele tiver data, exibimos um cabeçalho simples indicando a data/hora fora do carrossel
+        if (itensDoHorario.length === 1 && primeiroWp.dataHora) {
+          const headerUnico = document.createElement('div');
+          headerUnico.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
+          headerUnico.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
+          blocoDiv.appendChild(headerUnico);
         }
 
         if (itensDoHorario.length > 1) {
           const carrosselContainerDiv = document.createElement('div');
           carrosselContainerDiv.className = "space-y-2";
+
+          // Cabeçalho de horário compartilhado para múltiplos cards no mesmo horário
+          if (primeiroWp.dataHora) {
+            const headerOpcoes = document.createElement('div');
+            headerOpcoes.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
+            headerOpcoes.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
+            carrosselContainerDiv.appendChild(headerOpcoes);
+          }
 
           const carrosselDiv = document.createElement('div');
           carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory w-full";
@@ -514,6 +523,7 @@
     function criarCardHTML(w) {
       const temCidade = w.cidade && w.cidade.trim() !== "";
       const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
+      const dataHoraFormatada = w.dataHora ? formatarData(w.dataHora) : null;
 
       return `
         <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 relative h-full flex flex-col justify-between">
@@ -522,6 +532,7 @@
             <div class="p-4 space-y-2">
               <div class="flex justify-between items-start gap-2">
                 <div class="min-w-0 flex-1">
+                  ${dataHoraFormatada ? `<div class="flex items-center gap-1 text-[11px] text-indigo-600 font-bold mb-1"><i data-lucide="clock" class="w-3 h-3"></i><span>${dataHoraFormatada}</span></div>` : ''}
                   <h3 class="font-bold text-slate-900 text-base leading-snug break-words">${w.atividade}</h3>
                   <div class="mt-1">
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
