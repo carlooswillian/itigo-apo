@@ -422,30 +422,19 @@
         const blocoDiv = document.createElement('div');
         blocoDiv.className = "space-y-2";
 
-        // Se houver apenas 1 item no horário e ele tiver data, exibimos um cabeçalho simples indicando a data/hora fora do carrossel
-        if (itensDoHorario.length === 1 && primeiroWp.dataHora) {
-          const headerUnico = document.createElement('div');
-          headerUnico.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
-          headerUnico.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
-          blocoDiv.appendChild(headerUnico);
+        if (itensDoHorario.length > 1 && primeiroWp.dataHora) {
+          const headerOpcoes = document.createElement('div');
+          headerOpcoes.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
+          headerOpcoes.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
+          blocoDiv.appendChild(headerOpcoes);
         }
 
         if (itensDoHorario.length > 1) {
           const carrosselContainerDiv = document.createElement('div');
           carrosselContainerDiv.className = "space-y-2";
 
-          // Cabeçalho de horário compartilhado para múltiplos cards no mesmo horário
-          if (primeiroWp.dataHora) {
-            const headerOpcoes = document.createElement('div');
-            headerOpcoes.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
-            headerOpcoes.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
-            carrosselContainerDiv.appendChild(headerOpcoes);
-          }
-
           const carrosselDiv = document.createElement('div');
-          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory w-full";
-          const carrosselId = `carrossel-${Math.random().toString(36).substr(2, 9)}`;
-          carrosselDiv.id = carrosselId;
+          carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-1 w-full";
 
           itensDoHorario.forEach((w) => {
             const cardHtml = criarCardHTML(w);
@@ -459,38 +448,6 @@
           });
 
           carrosselContainerDiv.appendChild(carrosselDiv);
-
-          // Criação dos Dots (Bolinhas) abaixo do carrossel
-          const dotsDiv = document.createElement('div');
-          dotsDiv.className = "flex justify-center items-center gap-1.5 pt-1";
-          
-          itensDoHorario.forEach((w, index) => {
-            const dot = document.createElement('button');
-            dot.className = `h-1.5 rounded-full transition-all duration-300 ${index === 0 ? 'w-4 bg-indigo-600' : 'w-1.5 bg-slate-300'}`;
-            dot.onclick = () => {
-              const cardEl = document.getElementById(`card-wp-${w.id}`);
-              cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-            };
-            dotsDiv.appendChild(dot);
-          });
-
-          // Listener para atualizar os dots quando o usuário fizer scroll manualmente
-          carrosselDiv.onscroll = () => {
-            const scrollLeft = carrosselDiv.scrollLeft;
-            const cardWidth = carrosselDiv.offsetWidth;
-            const activeIndex = Math.round(scrollLeft / cardWidth);
-            
-            const dots = dotsDiv.children;
-            for (let i = 0; i < dots.length; i++) {
-              if (i === activeIndex) {
-                dots[i].className = "h-1.5 w-4 rounded-full bg-indigo-600 transition-all duration-300";
-              } else {
-                dots[i].className = "h-1.5 w-1.5 rounded-full bg-slate-300 transition-all duration-300";
-              }
-            }
-          };
-
-          carrosselContainerDiv.appendChild(dotsDiv);
           blocoDiv.appendChild(carrosselContainerDiv);
         } else {
           const w = itensDoHorario[0];
@@ -523,7 +480,6 @@
     function criarCardHTML(w) {
       const temCidade = w.cidade && w.cidade.trim() !== "";
       const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
-      const dataHoraFormatada = w.dataHora ? formatarData(w.dataHora) : null;
 
       return `
         <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 relative h-full flex flex-col justify-between">
@@ -532,7 +488,6 @@
             <div class="p-4 space-y-2">
               <div class="flex justify-between items-start gap-2">
                 <div class="min-w-0 flex-1">
-                  ${dataHoraFormatada ? `<div class="flex items-center gap-1 text-[11px] text-indigo-600 font-bold mb-1"><i data-lucide="clock" class="w-3 h-3"></i><span>${dataHoraFormatada}</span></div>` : ''}
                   <h3 class="font-bold text-slate-900 text-base leading-snug break-words">${w.atividade}</h3>
                   <div class="mt-1">
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
