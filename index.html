@@ -12,11 +12,6 @@
     .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* Scroll sutil para os dots / carrossel */
-    .custom-dots-scroll::-webkit-scrollbar { height: 4px; }
-    .custom-dots-scroll::-webkit-scrollbar-track { background: transparent; }
-    .custom-dots-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
@@ -427,7 +422,8 @@
         const blocoDiv = document.createElement('div');
         blocoDiv.className = "space-y-2";
 
-        if (primeiroWp.dataHora) {
+        // Se houver mais de 1 item, exibe o cabeçalho de data/hora padrão do grupo em cima do carrossel
+        if (itensDoHorario.length > 1 && primeiroWp.dataHora) {
           const headerOpcoes = document.createElement('div');
           headerOpcoes.className = "flex items-center gap-1.5 text-xs text-indigo-600 font-bold px-1";
           headerOpcoes.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>${formatarData(primeiroWp.dataHora)}</span>`;
@@ -439,12 +435,11 @@
           carrosselContainerDiv.className = "space-y-2";
 
           const carrosselDiv = document.createElement('div');
-          const carrosselId = `carrossel_${Math.random().toString(36).substr(2, 9)}`;
-          carrosselDiv.id = carrosselId;
           carrosselDiv.className = "flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-1 w-full";
 
+          // Carrossel: NÃO exibe data/hora dentro dos cards individuais
           itensDoHorario.forEach((w) => {
-            const cardHtml = criarCardHTML(w);
+            const cardHtml = criarCardHTML(w, false);
             const cardWrapper = document.createElement('div');
             cardWrapper.id = `card-wp-${w.id}`;
             cardWrapper.className = "w-full flex-shrink-0 snap-start transition-all duration-300";
@@ -456,7 +451,7 @@
 
           carrosselContainerDiv.appendChild(carrosselDiv);
 
-          // Container de Dots / Indicadores de paginação
+          // Dots / Indicadores de paginação
           const dotsDiv = document.createElement('div');
           dotsDiv.className = "flex justify-center items-center gap-1.5 pt-1";
           
@@ -470,7 +465,6 @@
             dotsDiv.appendChild(dot);
           });
 
-          // Atualizar dots ao fazer scroll no carrossel
           carrosselDiv.addEventListener('scroll', () => {
             const scrollLeft = carrosselDiv.scrollLeft;
             const cardWidth = carrosselDiv.offsetWidth;
@@ -488,8 +482,9 @@
           carrosselContainerDiv.appendChild(dotsDiv);
           blocoDiv.appendChild(carrosselContainerDiv);
         } else {
+          // Card Individual (não está no carrossel): EXIBE a data e hora abaixo do nome da cidade
           const w = itensDoHorario[0];
-          const cardHtml = criarCardHTML(w);
+          const cardHtml = criarCardHTML(w, true);
           const cardWrapper = document.createElement('div');
           cardWrapper.id = `card-wp-${w.id}`;
           cardWrapper.className = "transition-all duration-300";
@@ -515,20 +510,13 @@
       }
     }
 
-    function criarCardHTML(w) {
+    function criarCardHTML(w, exibirDataHoraNoCard = false) {
       const temCidade = w.cidade && w.cidade.trim() !== "";
       const valorOrcadoItem = w.valorOrcado !== undefined ? w.valorOrcado : (w.valorEstimado || 0);
 
-      // Extração da hora para exibir abaixo do nome da cidade nos cards
-      let horaFormatadaCard = "";
-      if (w.dataHora) {
-        const dataObj = new Date(w.dataHora);
-        if (!isNaN(dataObj.getTime())) {
-          const dataCorrigida = new Date(dataObj.getTime() - (3 * 60 * 60 * 1000));
-          const h = String(dataCorrigida.getUTCHours()).padStart(2, '0');
-          const m = String(dataCorrigida.getUTCMinutes()).padStart(2, '0');
-          horaFormatadaCard = `${h}:${m}`;
-        }
+      let dataHoraFormatada = "";
+      if (exibirDataHoraNoCard && w.dataHora) {
+        dataHoraFormatada = formatarData(w.dataHora);
       }
 
       return `
@@ -539,9 +527,9 @@
               <div class="flex justify-between items-start gap-2">
                 <div class="min-w-0 flex-1">
                   <h3 class="font-bold text-slate-900 text-base leading-snug break-words">${w.atividade}</h3>
-                  <div class="mt-1 flex items-center gap-2">
+                  <div class="mt-1 flex flex-wrap items-center gap-2">
                     <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${w.cidade || 'Atividade Geral'}</span>
-                    ${horaFormatadaCard ? `<span class="text-[10px] font-semibold text-slate-500 flex items-center gap-0.5"><i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> ${horaFormatadaCard}</span>` : ''}
+                    ${dataHoraFormatada ? `<span class="text-[10px] font-semibold text-slate-500 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> ${dataHoraFormatada}</span>` : ''}
                   </div>
                 </div>
                 <div class="flex items-center gap-1 flex-shrink-0">
